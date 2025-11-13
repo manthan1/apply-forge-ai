@@ -41,7 +41,7 @@ export default function Apply() {
 
       try {
         // Try to fetch by UUID first
-        let { data, error } = await supabase
+        let { data, error } = await (supabase as any)
           .from("job_listings")
           .select("*")
           .eq("id", jobId)
@@ -49,14 +49,14 @@ export default function Apply() {
 
         // If not found, try shortlink
         if (error) {
-          const { data: shortlink } = await supabase
+          const { data: shortlink } = await (supabase as any)
             .from("shortlinks")
             .select("job_listing_id")
             .eq("id", jobId)
             .single();
 
           if (shortlink) {
-            const response = await supabase
+            const response = await (supabase as any)
               .from("job_listings")
               .select("*")
               .eq("id", shortlink.job_listing_id)
@@ -102,7 +102,7 @@ export default function Apply() {
         .getPublicUrl(filePath);
 
       // Save applicant data
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from("applicants")
         .insert({
           job_id: job.job_id,

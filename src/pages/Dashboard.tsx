@@ -54,7 +54,7 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("job_listings")
         .select("*")
         .eq("hr_user_id", user.id)
@@ -65,15 +65,15 @@ export default function Dashboard() {
       
       // Fetch applicant counts for each job
       if (data && data.length > 0) {
-        const jobIds = data.map(job => job.job_id);
-        const { data: applicantsData, error: applicantsError } = await supabase
+        const jobIds = data.map((job: any) => job.job_id);
+        const { data: applicantsData, error: applicantsError } = await (supabase as any)
           .from("ai_analysed_resume")
           .select("job_id")
           .in("job_id", jobIds);
         
         if (!applicantsError && applicantsData) {
           const counts: Record<string, number> = {};
-          applicantsData.forEach(app => {
+          applicantsData.forEach((app: any) => {
             counts[app.job_id] = (counts[app.job_id] || 0) + 1;
           });
           setApplicantCount(counts);
@@ -90,7 +90,7 @@ export default function Dashboard() {
     setSearchJobId(jobId);
     try {
       // Fetch analyzed resume data
-      const { data: resumeData, error: resumeError } = await supabase
+      const { data: resumeData, error: resumeError } = await (supabase as any)
         .from("ai_analysed_resume")
         .select("*")
         .eq("job_id", jobId)
@@ -105,8 +105,8 @@ export default function Dashboard() {
       }
 
       // Fetch CV URLs from applicants table
-      const emails = resumeData.map(r => r.email);
-      const { data: applicantsData, error: applicantsError } = await supabase
+      const emails = resumeData.map((r: any) => r.email);
+      const { data: applicantsData, error: applicantsError } = await (supabase as any)
         .from("applicants")
         .select("email, cv_url")
         .in("email", emails)
@@ -115,8 +115,8 @@ export default function Dashboard() {
       if (applicantsError) throw applicantsError;
 
       // Merge cv_url from applicants into resume data
-      const cvUrlMap = new Map(applicantsData?.map(a => [a.email, a.cv_url]) || []);
-      const mergedData = resumeData.map(resume => ({
+      const cvUrlMap = new Map(applicantsData?.map((a: any) => [a.email, a.cv_url]) || []);
+      const mergedData = resumeData.map((resume: any) => ({
         ...resume,
         cv_url: cvUrlMap.get(resume.email) || resume.cv_url
       }));
@@ -146,7 +146,7 @@ export default function Dashboard() {
       const jobIds = jobs.map(job => job.job_id);
       
       // Fetch all resume data
-      const { data: resumeData, error: resumeError } = await supabase
+      const { data: resumeData, error: resumeError } = await (supabase as any)
         .from("ai_analysed_resume")
         .select("*")
         .in("job_id", jobIds)
@@ -161,8 +161,8 @@ export default function Dashboard() {
       }
 
       // Fetch CV URLs from applicants table
-      const emails = resumeData.map(r => r.email);
-      const { data: applicantsData, error: applicantsError } = await supabase
+      const emails = resumeData.map((r: any) => r.email);
+      const { data: applicantsData, error: applicantsError } = await (supabase as any)
         .from("applicants")
         .select("email, cv_url, job_id")
         .in("email", emails)
@@ -172,9 +172,9 @@ export default function Dashboard() {
 
       // Merge cv_url from applicants into resume data
       const cvUrlMap = new Map(
-        applicantsData?.map(a => [`${a.email}_${a.job_id}`, a.cv_url]) || []
+        applicantsData?.map((a: any) => [`${a.email}_${a.job_id}`, a.cv_url]) || []
       );
-      const mergedData = resumeData.map(resume => ({
+      const mergedData = resumeData.map((resume: any) => ({
         ...resume,
         cv_url: cvUrlMap.get(`${resume.email}_${resume.job_id}`) || resume.cv_url
       }));
@@ -192,7 +192,7 @@ export default function Dashboard() {
     const newStatus = currentStatus === "Active" ? "Closed" : "Active";
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("job_listings")
         .update({ status: newStatus })
         .eq("id", jobId);

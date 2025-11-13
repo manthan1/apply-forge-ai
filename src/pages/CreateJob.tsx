@@ -27,7 +27,7 @@ export default function CreateJob() {
     setLoading(true);
     try {
       // Get company name from hr_profiles
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from("hr_profiles")
         .select("company_name")
         .eq("id", user.id)
@@ -59,7 +59,7 @@ export default function CreateJob() {
       
       // Generate short link
       const shortId = generateShortId();
-      const { error: shortlinkError } = await supabase
+      const { error: shortlinkError } = await (supabase as any)
         .from("shortlinks")
         .insert({
           id: shortId,
