@@ -37,29 +37,96 @@ interface JobListing {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchJobId, setSearchJobId] = useState("");
   const [candidates, setCandidates] = useState<AnalyzedResume[]>([]);
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [applicantCount, setApplicantCount] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    if (user?.id) {
+      fetchJobs();
+    }
+  }, [user?.id]);
 
   const fetchJobs = async () => {
+    if (!user?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from("job_listings")
         .select("*")
-        .eq("hr_user_id", user?.id)
+        .eq("hr_user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       setJobs(data || []);
+      
+      // Fetch applicant counts for each job
+      if (data && data.length > 0) {
+        const jobIds = data.map(job => job.job_id);
+        const { data: applicantsData, error: applicantsError } = await supabase
+          .from("ai_analysed_resume")
+          .select("job_id")
+          .in("job_id", jobIds);
+        
+        if (!applicantsError && applicantsData) {
+          const counts: Record<string, number> = {};
+          applicantsData.forEach(app => {
+            counts[app.job_id] = (counts[app.job_id] || 0) + 1;
+          });
+          setApplicantCount(counts);
+        }
+      }
     } catch (error: any) {
       console.error("Error fetching jobs:", error);
       toast.error("Failed to load job listings");
+    }
+  };
+
+  const handleViewJobCandidates = async (jobId: string) => {
+    setLoading(true);
+    setSearchJobId(jobId);
+    try {
+      // Fetch analyzed resume data
+      const { data: resumeData, error: resumeError } = await supabase
+        .from("ai_analysed_resume")
+        .select("*")
+        .eq("job_id", jobId)
+        .order("created_at", { ascending: false });
+
+      if (resumeError) throw resumeError;
+      
+      if (!resumeData || resumeData.length === 0) {
+        toast.info("No candidates have applied yet for this job.");
+        setCandidates([]);
+        return;
+      }
+
+      // Fetch CV URLs from applicants table
+      const emails = resumeData.map(r => r.email);
+      const { data: applicantsData, error: applicantsError } = await supabase
+        .from("applicants")
+        .select("email, cv_url")
+        .in("email", emails)
+        .eq("job_id", jobId);
+
+      if (applicantsError) throw applicantsError;
+
+      // Merge cv_url from applicants into resume data
+      const cvUrlMap = new Map(applicantsData?.map(a => [a.email, a.cv_url]) || []);
+      const mergedData = resumeData.map(resume => ({
+        ...resume,
+        cv_url: cvUrlMap.get(resume.email) || resume.cv_url
+      }));
+      
+      setCandidates(mergedData);
+    } catch (error: any) {
+      console.error("Error fetching candidates:", error);
+      toast.error("Failed to load candidates");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,48 +136,50 @@ export default function Dashboard() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("ai_analysed_resume")
-        .select("*")
-        .eq("job_id", searchJobId.trim())
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        toast.info("No candidates have applied yet for this job.");
-      }
-      
-      setCandidates(data || []);
-    } catch (error: any) {
-      console.error("Error searching candidates:", error);
-      toast.error("Failed to search candidates");
-    } finally {
-      setLoading(false);
-    }
+    await handleViewJobCandidates(searchJobId.trim());
   };
 
   const handleViewAll = async () => {
     setLoading(true);
+    setSearchJobId("");
     try {
       const jobIds = jobs.map(job => job.job_id);
       
-      const { data, error } = await supabase
+      // Fetch all resume data
+      const { data: resumeData, error: resumeError } = await supabase
         .from("ai_analysed_resume")
         .select("*")
         .in("job_id", jobIds)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (resumeError) throw resumeError;
       
-      if (!data || data.length === 0) {
+      if (!resumeData || resumeData.length === 0) {
         toast.info("No candidates have applied yet.");
+        setCandidates([]);
+        return;
       }
+
+      // Fetch CV URLs from applicants table
+      const emails = resumeData.map(r => r.email);
+      const { data: applicantsData, error: applicantsError } = await supabase
+        .from("applicants")
+        .select("email, cv_url, job_id")
+        .in("email", emails)
+        .in("job_id", jobIds);
+
+      if (applicantsError) throw applicantsError;
+
+      // Merge cv_url from applicants into resume data
+      const cvUrlMap = new Map(
+        applicantsData?.map(a => [`${a.email}_${a.job_id}`, a.cv_url]) || []
+      );
+      const mergedData = resumeData.map(resume => ({
+        ...resume,
+        cv_url: cvUrlMap.get(`${resume.email}_${resume.job_id}`) || resume.cv_url
+      }));
       
-      setCandidates(data || []);
-      setSearchJobId("");
+      setCandidates(mergedData);
     } catch (error: any) {
       console.error("Error fetching all candidates:", error);
       toast.error("Failed to load candidates");
@@ -137,6 +206,17 @@ export default function Dashboard() {
       toast.error("Failed to update job status");
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -310,6 +390,7 @@ export default function Dashboard() {
                     <TableRow>
                       <TableHead>Job Title</TableHead>
                       <TableHead>Job ID</TableHead>
+                      <TableHead>Applicants</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date Created</TableHead>
                       <TableHead>Actions</TableHead>
@@ -323,6 +404,11 @@ export default function Dashboard() {
                           <Badge variant="outline">{job.job_id}</Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="secondary">
+                            {applicantCount[job.job_id] || 0} applicants
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <Badge variant={job.status === "Active" ? "default" : "secondary"}>
                             {job.status}
                           </Badge>
@@ -331,23 +417,34 @@ export default function Dashboard() {
                           {new Date(job.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant={job.status === "Active" ? "destructive" : "default"}
-                            onClick={() => toggleJobStatus(job.id, job.status)}
-                          >
-                            {job.status === "Active" ? (
-                              <>
-                                <Lock className="h-4 w-4 mr-1" />
-                                Close
-                              </>
-                            ) : (
-                              <>
-                                <Unlock className="h-4 w-4 mr-1" />
-                                Reopen
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewJobCandidates(job.job_id)}
+                              disabled={loading}
+                            >
+                              <User className="h-4 w-4 mr-1" />
+                              View Candidates
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={job.status === "Active" ? "destructive" : "default"}
+                              onClick={() => toggleJobStatus(job.id, job.status)}
+                            >
+                              {job.status === "Active" ? (
+                                <>
+                                  <Lock className="h-4 w-4 mr-1" />
+                                  Close
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock className="h-4 w-4 mr-1" />
+                                  Reopen
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
