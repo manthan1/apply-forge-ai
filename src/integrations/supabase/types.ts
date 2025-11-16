@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_analysed_resume: {
+        Row: {
+          city: string | null
+          consideration: string | null
+          created_at: string
+          cv_url: string | null
+          educational_details: string | null
+          email: string | null
+          id: string
+          job_history: string | null
+          job_id: string
+          name: string | null
+          phone: string | null
+          skills: string | null
+          summarize: string | null
+          vote: string | null
+        }
+        Insert: {
+          city?: string | null
+          consideration?: string | null
+          created_at?: string
+          cv_url?: string | null
+          educational_details?: string | null
+          email?: string | null
+          id?: string
+          job_history?: string | null
+          job_id: string
+          name?: string | null
+          phone?: string | null
+          skills?: string | null
+          summarize?: string | null
+          vote?: string | null
+        }
+        Update: {
+          city?: string | null
+          consideration?: string | null
+          created_at?: string
+          cv_url?: string | null
+          educational_details?: string | null
+          email?: string | null
+          id?: string
+          job_history?: string | null
+          job_id?: string
+          name?: string | null
+          phone?: string | null
+          skills?: string | null
+          summarize?: string | null
+          vote?: string | null
+        }
+        Relationships: []
+      }
+      applicants: {
+        Row: {
+          created_at: string
+          cv_url: string
+          email: string
+          id: string
+          job_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          cv_url: string
+          email: string
+          id?: string
+          job_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          cv_url?: string
+          email?: string
+          id?: string
+          job_id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -113,6 +191,66 @@ export type Database = {
           },
         ]
       }
+      hr_profiles: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          initials: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id: string
+          initials: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          initials?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_listings: {
+        Row: {
+          company_name: string
+          created_at: string
+          hr_user_id: string
+          id: string
+          job_description: string
+          job_id: string
+          job_profile: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          hr_user_id: string
+          id?: string
+          job_description: string
+          job_id: string
+          job_profile: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          hr_user_id?: string
+          id?: string
+          job_description?: string
+          job_id?: string
+          job_profile?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -181,6 +319,32 @@ export type Database = {
           quotation_number?: string | null
         }
         Relationships: []
+      }
+      shortlinks: {
+        Row: {
+          created_at: string
+          id: string
+          job_listing_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          job_listing_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shortlinks_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tractors: {
         Row: {
