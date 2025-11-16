@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Search, Calendar, User, Phone, MapPin, Mail, FileText, Download, Briefcase, Lock, Unlock } from "lucide-react";
+import { Search, Calendar, User, Phone, MapPin, Mail, FileText, Download, Briefcase, Lock, Unlock, Eye } from "lucide-react";
 
 interface AnalyzedResume {
   id: string;
@@ -43,6 +46,7 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
   const [applicantCount, setApplicantCount] = useState<Record<string, number>>({});
+  const [selectedCandidate, setSelectedCandidate] = useState<AnalyzedResume | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -278,7 +282,11 @@ export default function Dashboard() {
                   </TableHeader>
                   <TableBody>
                     {candidates.map((candidate) => (
-                      <TableRow key={candidate.id}>
+                      <TableRow 
+                        key={candidate.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedCandidate(candidate)}
+                      >
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3" />
@@ -342,22 +350,31 @@ export default function Dashboard() {
                         <TableCell className="whitespace-nowrap">
                           <Badge variant="outline">{candidate.job_id}</Badge>
                         </TableCell>
-                        <TableCell>
-                          {candidate.cv_url && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex gap-2">
+                            {candidate.cv_url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                asChild
+                              >
+                                <a
+                                  href={candidate.cv_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              variant="ghost"
-                              asChild
+                              variant="outline"
+                              onClick={() => setSelectedCandidate(candidate)}
                             >
-                              <a
-                                href={candidate.cv_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Download className="h-4 w-4" />
-                              </a>
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -455,6 +472,144 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {selectedCandidate?.name || "Candidate Details"}
+            </DialogTitle>
+            <DialogDescription>
+              Complete applicant information for Job ID: {selectedCandidate?.job_id}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+            {selectedCandidate && (
+              <div className="space-y-6">
+                {/* Contact Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Contact Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {selectedCandidate.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        {selectedCandidate.phone || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">City</p>
+                      <p className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {selectedCandidate.city || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Applied Date</p>
+                      <p className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(selectedCandidate.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Educational Details */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Educational Details</h3>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap">{selectedCandidate.educational_details || "N/A"}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Job History */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Work Experience</h3>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap">{selectedCandidate.job_history || "N/A"}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Skills */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Skills</h3>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap">{selectedCandidate.skills || "N/A"}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Summary */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">AI Summary</h3>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap">{selectedCandidate.summarize || "N/A"}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Rating & Recommendation */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">AI Assessment</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Rating</p>
+                      <Badge variant={selectedCandidate.vote ? "default" : "secondary"} className="text-base">
+                        {selectedCandidate.vote || "N/A"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Recommendation</p>
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="whitespace-pre-wrap text-sm">{selectedCandidate.consideration || "N/A"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CV Download */}
+                {selectedCandidate.cv_url && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-center">
+                      <Button asChild>
+                        <a
+                          href={selectedCandidate.cv_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download CV
+                        </a>
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
