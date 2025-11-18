@@ -218,11 +218,25 @@ export default function Dashboard() {
     }
     
     if (voteNum >= 8) {
-      return <Badge className="bg-green-600 hover:bg-green-700">{vote}</Badge>;
+      return <Badge className="bg-success hover:bg-success/80 text-success-foreground">{vote}</Badge>;
     } else if (voteNum >= 5) {
-      return <Badge className="bg-yellow-600 hover:bg-yellow-700">{vote}</Badge>;
+      return <Badge className="bg-warning hover:bg-warning/80 text-warning-foreground">{vote}</Badge>;
     }
     return <Badge variant="secondary">{vote}</Badge>;
+  };
+
+  const getRowBackgroundClass = (vote: string) => {
+    const voteNum = parseFloat(vote);
+    if (isNaN(voteNum)) {
+      return "";
+    }
+    
+    if (voteNum >= 8) {
+      return "bg-success/10 hover:bg-success/20";
+    } else if (voteNum >= 5) {
+      return "bg-warning/10 hover:bg-warning/20";
+    }
+    return "";
   };
 
   const handleSelectCandidate = (email: string, checked: boolean) => {
@@ -382,7 +396,7 @@ export default function Dashboard() {
                     {candidates.map((candidate) => (
                       <TableRow 
                         key={candidate.id}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className={`cursor-pointer ${getRowBackgroundClass(candidate.vote || "")}`}
                         onClick={() => setSelectedCandidate(candidate)}
                       >
                         {isJobSpecificView && (
