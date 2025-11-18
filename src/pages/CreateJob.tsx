@@ -89,83 +89,108 @@ export default function CreateJob() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <Header />
       
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
-                Create Dynamic Job Application Form
-              </CardTitle>
-              <CardDescription>
-                Describe your job requirements in plain English and we'll create a structured application form
+        <div className="max-w-3xl mx-auto space-y-8">
+          {/* Hero Section */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">AI-Powered Job Creation</span>
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Create Your Job Application Form
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Describe your job requirements in plain English and our AI will create a structured, shareable application form instantly
+            </p>
+          </div>
+
+          <Card className="border-2 shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent">
+              <CardTitle className="text-2xl">Job Details</CardTitle>
+              <CardDescription className="text-base">
+                Tell us about the position you're hiring for
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <form onSubmit={handleCreateForm} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="job-details">Job Details</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="job-details" className="text-base font-semibold">
+                    Describe Your Job Opening
+                  </Label>
                   <Textarea
                     id="job-details"
-                    placeholder="E.g., We're looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and AWS. The role involves leading development of our main product platform..."
+                    placeholder="Example: We're looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and AWS. The role involves leading development of our main product platform, mentoring junior developers, and collaborating with cross-functional teams..."
                     value={jobPrompt}
                     onChange={(e) => setJobPrompt(e.target.value)}
                     required
-                    rows={8}
-                    className="resize-none"
+                    rows={10}
+                    className="resize-none text-base"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Describe the job role, requirements, responsibilities, and any other relevant details
-                  </p>
+                  <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
+                    <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      Include job title, required skills, experience level, key responsibilities, and any specific requirements
+                    </p>
+                  </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full" size="lg">
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full h-12 text-base font-semibold shadow-lg"
+                  size="lg"
+                >
                   {loading ? (
                     <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                      Creating Form...
+                      <span className="animate-spin mr-2">⚡</span>
+                      Generating Your Form...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Create Form
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      Generate Application Form
                     </>
                   )}
                 </Button>
               </form>
 
               {shareLink && (
-                <div className="mt-6 p-4 bg-success/10 border border-success/20 rounded-lg">
-                  <p className="text-sm font-medium text-success mb-2 flex items-center gap-2">
-                    <Check className="h-4 w-4" />
-                    Form created successfully!
+                <div className="mt-8 p-6 bg-gradient-to-r from-success/10 via-success/5 to-transparent rounded-xl border-2 border-success/30 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-success" />
+                    <Label className="text-lg font-semibold text-foreground">Job Form Created Successfully!</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Share this link with candidates to receive applications
                   </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={shareLink}
-                      readOnly
-                      className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-md"
-                    />
+                  <div className="flex items-center gap-3 p-4 bg-background rounded-lg border-2">
+                    <code className="flex-1 text-sm font-mono text-primary truncate select-all">
+                      {shareLink}
+                    </code>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant={copied ? "default" : "outline"}
                       size="sm"
                       onClick={copyToClipboard}
+                      className="flex-shrink-0"
                     >
                       {copied ? (
-                        <Check className="h-4 w-4" />
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Copied!
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy Link
+                        </>
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Share this link with candidates to collect applications
-                  </p>
                 </div>
               )}
             </CardContent>
