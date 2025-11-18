@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Search, Calendar, User, Phone, MapPin, Mail, FileText, Download, Briefcase, Lock, Unlock, Eye } from "lucide-react";
+import { Search, Calendar, User, Phone, MapPin, Mail, FileText, Download, Briefcase, Lock, Unlock, Eye, Send } from "lucide-react";
 
 interface AnalyzedResume {
   id: string;
@@ -47,6 +48,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [applicantCount, setApplicantCount] = useState<Record<string, number>>({});
   const [selectedCandidate, setSelectedCandidate] = useState<AnalyzedResume | null>(null);
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [isJobSpecificView, setIsJobSpecificView] = useState(false);
+  const [currentJobProfile, setCurrentJobProfile] = useState("");
+  const [currentCompanyName, setCurrentCompanyName] = useState("");
 
   useEffect(() => {
     if (user?.id) {
@@ -92,7 +97,17 @@ export default function Dashboard() {
   const handleViewJobCandidates = async (jobId: string) => {
     setLoading(true);
     setSearchJobId(jobId);
+    setIsJobSpecificView(true);
+    setSelectedEmails([]);
+    
     try {
+      // Fetch job details for email sending
+      const job = jobs.find(j => j.job_id === jobId);
+      if (job) {
+        setCurrentJobProfile(job.job_profile);
+        setCurrentCompanyName(job.company_name);
+      }
+      
       // Fetch analyzed resume data
       const { data: resumeData, error: resumeError } = await (supabase as any)
         .from("ai_analysed_resume")
@@ -146,6 +161,10 @@ export default function Dashboard() {
   const handleViewAll = async () => {
     setLoading(true);
     setSearchJobId("");
+    setIsJobSpecificView(false);
+    setSelectedEmails([]);
+    setCurrentJobProfile("");
+    setCurrentCompanyName("");
     try {
       const jobIds = jobs.map(job => job.job_id);
       
@@ -189,6 +208,77 @@ export default function Dashboard() {
       toast.error("Failed to load candidates");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getVoteBadge = (vote: string) => {
+    const voteNum = parseFloat(vote);
+    if (isNaN(voteNum)) {
+      return <Badge variant="secondary">{vote}</Badge>;
+    }
+    
+    if (voteNum >= 8) {
+      return <Badge className="bg-green-600 hover:bg-green-700">{vote}</Badge>;
+    } else if (voteNum >= 5) {
+      return <Badge className="bg-yellow-600 hover:bg-yellow-700">{vote}</Badge>;
+    }
+    return <Badge variant="secondary">{vote}</Badge>;
+  };
+
+  const handleSelectCandidate = (email: string, checked: boolean) => {
+    if (checked) {
+      setSelectedEmails([...selectedEmails, email]);
+    } else {
+      setSelectedEmails(selectedEmails.filter(e => e !== email));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedEmails(candidates.map(c => c.email));
+    } else {
+      setSelectedEmails([]);
+    }
+  };
+
+  const handleSendEmailToSelected = async () => {
+    if (!isJobSpecificView) {
+      toast.error("⚠️ Candidate selection is only available when viewing candidates for a specific Job ID.");
+      return;
+    }
+
+    if (selectedEmails.length === 0) {
+      toast.error("Please select at least one candidate.");
+      return;
+    }
+
+    if (!currentJobProfile || !currentCompanyName) {
+      toast.error("Failed to retrieve job information. Please try again.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://n8n.srv898271.hstgr.cloud/webhook/selected_candidates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          emails: selectedEmails,
+          job_profile: currentJobProfile,
+          company_name: currentCompanyName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send email notification");
+      }
+
+      toast.success(`Email notifications sent to ${selectedEmails.length} candidate(s)!`);
+      setSelectedEmails([]);
+    } catch (error: any) {
+      console.error("Error sending emails:", error);
+      toast.error("Failed to send email notifications. Please try again.");
     }
   };
 
@@ -265,6 +355,14 @@ export default function Dashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isJobSpecificView && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedEmails.length === candidates.length && candidates.length > 0}
+                            onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Date</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Phone</TableHead>
@@ -287,6 +385,14 @@ export default function Dashboard() {
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => setSelectedCandidate(candidate)}
                       >
+                        {isJobSpecificView && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedEmails.includes(candidate.email)}
+                              onCheckedChange={(checked) => handleSelectCandidate(candidate.email, checked as boolean)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3" />
@@ -338,9 +444,7 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={candidate.vote ? "default" : "secondary"}>
-                            {candidate.vote || "N/A"}
-                          </Badge>
+                          {getVoteBadge(candidate.vote || "N/A")}
                         </TableCell>
                         <TableCell className="max-w-xs">
                           <div className="truncate text-sm" title={candidate.consideration}>
@@ -381,6 +485,19 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
+              
+              {isJobSpecificView && candidates.length > 0 && (
+                <div className="mt-4 flex justify-end">
+                  <Button 
+                    onClick={handleSendEmailToSelected}
+                    disabled={selectedEmails.length === 0}
+                    className="gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Send Email to Selected Candidates ({selectedEmails.length})
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
