@@ -1,273 +1,264 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { Briefcase, Users, Calendar } from "lucide-react";
 
-interface Job {
-  id: string;
-  job_id: string;
-  job_profile: string;
-  company_name: string;
-  status: string;
-  created_at: string;
+    import {useEffect, useState} from "react";
+import {Link} from "react-router-dom";
+import {supabase} from "@/integrations/supabase/client";
+import {useAuth} from "@/hooks/useAuth";
+import {DashboardLayout} from "@/components/DashboardLayout";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Button} from "@/components/ui/button";
+import {toast} from "sonner";
+
+interface JobListing {
+    id: string;
+    job_id: string;
+    job_profile: string;
+    company_name: string;
+    status: string;
+    created_at: string;
 }
 
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  vote: string;
-  created_at: string;
-}
+export default function Jobs () {
+    const {user} = useAuth();
+    const [jobs, setJobs] = useState<JobListing[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [updatingJobIds, setUpdatingJobIds] = useState<string[]>([]);
 
-export default function Jobs() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    fetchJobs();
-  }, [user]);
-
-  const fetchJobs = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("job_listings")
-      .select("*")
-      .eq("hr_user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch jobs",
-        variant: "destructive",
-      });
-    } else {
-      setJobs(data || []);
-    }
-    setLoading(false);
-  };
-
-  const fetchCandidates = async (jobId: string) => {
-    const { data, error } = await supabase
-      .from("ai_analysed_resume")
-      .select("*")
-      .eq("job_id", jobId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch candidates",
-        variant: "destructive",
-      });
-    } else {
-      setCandidates(data || []);
-    }
-  };
-
-  const handleViewCandidates = (job: Job) => {
-    setSelectedJob(job);
-    setSelectedCandidates([]);
-    fetchCandidates(job.job_id);
-  };
-
-  const handleSelectCandidate = (email: string) => {
-    setSelectedCandidates(prev =>
-      prev.includes(email)
-        ? prev.filter(e => e !== email)
-        : [...prev, email]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedCandidates.length === candidates.length) {
-      setSelectedCandidates([]);
-    } else {
-      setSelectedCandidates(candidates.map(c => c.email));
-    }
-  };
-
-  const handleSendEmails = async () => {
-    if (selectedCandidates.length === 0) {
-      toast({
-        title: "No candidates selected",
-        description: "Please select at least one candidate",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSending(true);
-    try {
-      const response = await fetch(
-        "https://n8n.srv898271.hstgr.cloud/webhook/selected_candidates",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            emails: selectedCandidates,
-            job_profile: selectedJob?.job_profile,
-            company_name: selectedJob?.company_name,
-          }),
+    useEffect(() => {
+        if(user?.id) {
+            fetchJobs();
         }
-      );
+    }, [user?.id]);
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `Email sent to ${selectedCandidates.length} candidate(s)`,
-        });
-        setSelectedCandidates([]);
-      } else {
-        throw new Error("Failed to send emails");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send emails",
-        variant: "destructive",
-      });
-    } finally {
-      setSending(false);
-    }
-  };
+    const fetchJobs = async () => {
+        setLoading(true);
+        try {
+            const {data, error} = await (supabase as any)
+                .from("job_listings")
+                .select("*")
+                .eq("hr_user_id", user.id)
+                .order("created_at", {ascending: false});
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Job Listings</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your job postings and view applicants
-            </p>
-          </div>
-        </div>
+            if(error) throw error;
+            setJobs(data || []);
+        } catch(error: any) {
+            console.error("Error fetching jobs:", error);
+            toast.error("Failed to load jobs");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        {!selectedJob ? (
-          <div className="grid gap-4">
-            {loading ? (
-              <Card>
-                <CardContent className="p-8">
-                  <p className="text-center text-muted-foreground">Loading jobs...</p>
-                </CardContent>
-              </Card>
-            ) : jobs.length === 0 ? (
-              <Card>
-                <CardContent className="p-8">
-                  <p className="text-center text-muted-foreground">No job listings yet</p>
-                </CardContent>
-              </Card>
-            ) : (
-              jobs.map((job) => (
-                <Card key={job.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Briefcase className="h-5 w-5 text-primary" />
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {job.job_profile}
-                          </h3>
-                          <Badge variant={job.status === "Active" ? "default" : "secondary"}>
-                            {job.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {new Date(job.created_at).toLocaleDateString()}
-                          </span>
-                          <span>Job ID: {job.job_id}</span>
-                        </div>
-                      </div>
-                      <Button onClick={() => handleViewCandidates(job)}>
-                        <Users className="h-4 w-4 mr-2" />
-                        View Candidates
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={() => setSelectedJob(null)}>
-                ← Back to Jobs
-              </Button>
-              <Button
-                onClick={handleSendEmails}
-                disabled={selectedCandidates.length === 0 || sending}
-              >
-                {sending ? "Sending..." : `Send Email to ${selectedCandidates.length} Selected`}
-              </Button>
+    return (
+        <DashboardLayout>
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-foreground">Jobs</h1>
+                <p className="text-muted-foreground">Jobs you've created and shared with candidates.</p>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                  {selectedJob.job_profile} - Candidates
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {candidates.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No candidates yet for this job
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 pb-3 border-b">
-                      <Checkbox
-                        checked={selectedCandidates.length === candidates.length}
-                        onCheckedChange={handleSelectAll}
-                      />
-                      <span className="text-sm font-medium">Select All</span>
-                    </div>
-                    {candidates.map((candidate) => (
-                      <div
-                        key={candidate.id}
-                        className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-                      >
-                        <Checkbox
-                          checked={selectedCandidates.includes(candidate.email)}
-                          onCheckedChange={() => handleSelectCandidate(candidate.email)}
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{candidate.name}</p>
-                          <p className="text-sm text-muted-foreground">{candidate.email}</p>
-                        </div>
-                        {candidate.vote && (
-                          <Badge variant="outline">Score: {candidate.vote}/10</Badge>
+            <Card className="border-border/50">
+                <CardHeader>
+                    <CardTitle>Openings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="font-semibold">ROLE</TableHead>
+                                    <TableHead className="font-semibold">JOB ID</TableHead>
+                                    <TableHead className="font-semibold">COMPANY</TableHead>
+                                    <TableHead className="font-semibold">STATUS</TableHead>
+                                    <TableHead className="font-semibold">ACTIONS</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {jobs.map((job) => (
+                                    <TableRow key={job.id}>
+                                        <TableCell>
+                                            <div className="font-medium text-foreground">{job.job_profile}</div>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.job_id}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.company_name}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.status}</TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                <Link to={/dashboard?jobId=${encodeURIComponent(job.job_id)}}>
+                                                    <Button size="sm">View Candidates</Button>
+                                                </Link>
+                                                <a href={/apply?id=${job.id}} target="_blank" rel="noreferrer">
+                                                    <Button variant="outline" size="sm">Preview</Button>
+                                                </a>
+                                                <Button
+                                                    size="sm"
+                                                    variant={job.status === "Active" ? undefined : "outline"}
+                                                    className={job.status === "Active" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+                                                    onClick={async () => {
+                                                        // prevent duplicate clicks
+                                                        if(updatingJobIds.includes(job.id)) return;
+                                                        setUpdatingJobIds((s) => [...s, job.id]);
+                                                        try {
+                                                            const newStatus = job.status === "Active" ? "Closed" : "Active";
+                                                            const {error} = await (supabase as any)
+                                                                .from("job_listings")
+                                                                .update({status: newStatus})
+                                                                .eq("id", job.id);
+                                                            if(error) throw error;
+                                                            toast.success(Job ${newStatus === "Active" ? "reopened" : "closed"} successfully);
+                                                            await fetchJobs();
+                                                        } catch(err: any) {
+                                                            console.error("Error updating job status:", err);
+                                                            toast.error(err?.message || "Failed to update job status");
+                                                        } finally {
+                                                            setUpdatingJobIds((s) => s.filter((id) => id !== job.id));
+                                                        }
+                                                    }}
+                                                >
+                                                    {updatingJobIds.includes(job.id) ? "Updating..." : job.status === "Active" ? "Close" : "Reopen"}
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        {jobs.length === 0 && !loading && (
+                            <div className="p-6 text-center text-sm text-muted-foreground">No jobs found.</div>
                         )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+                    </div>
+                </CardContent>
             </Card>
-          </div>
-        )}
-      </div>
-    </DashboardLayout>
-  );
+        </DashboardLayout>
+    );
+}import {useEffect, useState} from "react";
+import {Link} from "react-router-dom";
+import {supabase} from "@/integrations/supabase/client";
+import {useAuth} from "@/hooks/useAuth";
+import {DashboardLayout} from "@/components/DashboardLayout";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Button} from "@/components/ui/button";
+import {toast} from "sonner";
+
+interface JobListing {
+    id: string;
+    job_id: string;
+    job_profile: string;
+    company_name: string;
+    status: string;
+    created_at: string;
+}
+
+export default function Jobs () {
+    const {user} = useAuth();
+    const [jobs, setJobs] = useState<JobListing[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [updatingJobIds, setUpdatingJobIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        if(user?.id) {
+            fetchJobs();
+        }
+    }, [user?.id]);
+
+    const fetchJobs = async () => {
+        setLoading(true);
+        try {
+            const {data, error} = await (supabase as any)
+                .from("job_listings")
+                .select("*")
+                .eq("hr_user_id", user.id)
+                .order("created_at", {ascending: false});
+
+            if(error) throw error;
+            setJobs(data || []);
+        } catch(error: any) {
+            console.error("Error fetching jobs:", error);
+            toast.error("Failed to load jobs");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <DashboardLayout>
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-foreground">Jobs</h1>
+                <p className="text-muted-foreground">Jobs you've created and shared with candidates.</p>
+            </div>
+
+            <Card className="border-border/50">
+                <CardHeader>
+                    <CardTitle>Openings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="font-semibold">ROLE</TableHead>
+                                    <TableHead className="font-semibold">JOB ID</TableHead>
+                                    <TableHead className="font-semibold">COMPANY</TableHead>
+                                    <TableHead className="font-semibold">STATUS</TableHead>
+                                    <TableHead className="font-semibold">ACTIONS</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {jobs.map((job) => (
+                                    <TableRow key={job.id}>
+                                        <TableCell>
+                                            <div className="font-medium text-foreground">{job.job_profile}</div>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.job_id}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.company_name}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{job.status}</TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                <Link to={/dashboard?jobId=${encodeURIComponent(job.job_id)}}>
+                                                    <Button size="sm">View Candidates</Button>
+                                                </Link>
+                                                <a href={/apply?id=${job.id}} target="_blank" rel="noreferrer">
+                                                    <Button variant="outline" size="sm">Preview</Button>
+                                                </a>
+                                                <Button
+                                                    size="sm"
+                                                    variant={job.status === "Active" ? undefined : "outline"}
+                                                    className={job.status === "Active" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+                                                    onClick={async () => {
+                                                        // prevent duplicate clicks
+                                                        if(updatingJobIds.includes(job.id)) return;
+                                                        setUpdatingJobIds((s) => [...s, job.id]);
+                                                        try {
+                                                            const newStatus = job.status === "Active" ? "Closed" : "Active";
+                                                            const {error} = await (supabase as any)
+                                                                .from("job_listings")
+                                                                .update({status: newStatus})
+                                                                .eq("id", job.id);
+                                                            if(error) throw error;
+                                                            toast.success(Job ${newStatus === "Active" ? "reopened" : "closed"} successfully);
+                                                            await fetchJobs();
+                                                        } catch(err: any) {
+                                                            console.error("Error updating job status:", err);
+                                                            toast.error(err?.message || "Failed to update job status");
+                                                        } finally {
+                                                            setUpdatingJobIds((s) => s.filter((id) => id !== job.id));
+                                                        }
+                                                    }}
+                                                >
+                                                    {updatingJobIds.includes(job.id) ? "Updating..." : job.status === "Active" ? "Close" : "Reopen"}
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        {jobs.length === 0 && !loading && (
+                            <div className="p-6 text-center text-sm text-muted-foreground">No jobs found.</div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        </DashboardLayout>
+    );
 }
