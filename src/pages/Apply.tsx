@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Briefcase, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { Briefcase, Upload, CheckCircle2, AlertCircle, Building2, MapPin } from "lucide-react";
 
 interface JobListing {
   id: string;
@@ -40,14 +40,12 @@ export default function Apply() {
       }
 
       try {
-        // Try to fetch by UUID first
         let { data, error } = await (supabase as any)
           .from("job_listings")
           .select("*")
           .eq("id", jobId)
           .single();
 
-        // If not found, try shortlink
         if (error) {
           const { data: shortlink } = await (supabase as any)
             .from("shortlinks")
@@ -86,7 +84,6 @@ export default function Apply() {
 
     setSubmitting(true);
     try {
-      // Upload CV to Supabase Storage
       const fileExt = formData.cvFile.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${job.job_id}/${fileName}`;
@@ -101,7 +98,6 @@ export default function Apply() {
         .from("resumes")
         .getPublicUrl(filePath);
 
-      // Save applicant data
       const { error: insertError } = await (supabase as any)
         .from("applicants")
         .insert({
@@ -113,7 +109,6 @@ export default function Apply() {
 
       if (insertError) throw insertError;
 
-      // Send to webhook for AI analysis
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("email", formData.email);
@@ -140,9 +135,9 @@ export default function Apply() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
           <p className="text-muted-foreground">Loading job details...</p>
         </div>
       </div>
@@ -151,11 +146,13 @@ export default function Apply() {
 
   if (!job) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Job Not Found</h2>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="pt-12 pb-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Job Not Found</h2>
             <p className="text-muted-foreground">
               The job listing you're looking for doesn't exist or has been removed.
             </p>
@@ -167,11 +164,13 @@ export default function Apply() {
 
   if (job.status === "Closed") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-warning mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Position Closed</h2>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="pt-12 pb-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-warning" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Position Closed</h2>
             <p className="text-muted-foreground">
               This job is no longer accepting applications.
             </p>
@@ -183,14 +182,24 @@ export default function Apply() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Application Submitted!</h2>
-            <p className="text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="pt-12 pb-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="h-8 w-8 text-success" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Application Submitted!</h2>
+            <p className="text-muted-foreground mb-6">
               Thank you for your application. We'll review your profile and get back to you soon.
             </p>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm text-left">
+              <p className="font-medium mb-1">What's next?</p>
+              <ul className="text-muted-foreground space-y-1">
+                <li>• Our AI will analyze your resume</li>
+                <li>• HR team will review your application</li>
+                <li>• You'll hear from us within 5 business days</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -198,92 +207,150 @@ export default function Apply() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <Card>
-          <CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
+      <div className="container mx-auto max-w-3xl">
+        {/* Header Logo */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-lg">L</span>
+          </div>
+          <span className="text-xl font-semibold text-foreground">Lumina</span>
+        </div>
+
+        <Card className="border-border/50 shadow-xl">
+          <CardHeader className="space-y-4 pb-6">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Briefcase className="h-6 w-6 text-primary" />
+              <div className="p-4 bg-primary/10 rounded-xl">
+                <Briefcase className="h-8 w-8 text-primary" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-2xl mb-1">{job.job_profile}</CardTitle>
-                <CardDescription className="text-base">{job.company_name}</CardDescription>
-                <p className="text-sm text-muted-foreground mt-1">Job ID: {job.job_id}</p>
+                <CardTitle className="text-3xl mb-2">{job.job_profile}</CardTitle>
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4" />
+                    <span>{job.company_name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    <span>Job ID: {job.job_id}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-2">Job Description</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{job.job_description}</p>
+          
+          <CardContent className="space-y-8">
+            {/* Job Description */}
+            <div className="bg-muted/30 rounded-lg p-6">
+              <h3 className="font-semibold text-lg mb-3">About the Role</h3>
+              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {job.job_description}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-lg">Apply for this Position</h3>
+            {/* Application Form */}
+            <div className="pt-6 border-t border-border/50">
+              <h3 className="font-semibold text-2xl mb-6">Apply for this Position</h3>
               
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Full Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="h-11"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cv">Upload CV (PDF only)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="cv"
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) =>
-                      setFormData({ ...formData, cvFile: e.target.files?.[0] || null })
-                    }
-                    required
-                    className="cursor-pointer"
-                  />
-                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email Address <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="h-11"
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Please upload your resume in PDF format
-                </p>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Job Role</Label>
-                <Input value={job.job_profile} disabled className="bg-muted" />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cv" className="text-sm font-medium">
+                    Resume/CV (PDF only) <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="cv"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && file.type !== "application/pdf") {
+                          toast.error("Please upload a PDF file");
+                          e.target.value = "";
+                          return;
+                        }
+                        setFormData({ ...formData, cvFile: file || null });
+                      }}
+                      required
+                      className="h-11"
+                    />
+                    {formData.cvFile && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <span>{formData.cvFile.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload your resume in PDF format. Maximum file size: 10MB
+                  </p>
+                </div>
 
-              <Button type="submit" disabled={submitting} className="w-full" size="lg">
-                {submitting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Submitting Application...
-                  </>
-                ) : (
-                  "Submit Application"
-                )}
-              </Button>
-            </form>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">AI-Powered Screening:</span> Your resume will be automatically analyzed by our AI system to match your skills and experience with the job requirements.
+                  </p>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={submitting || !formData.cvFile} 
+                  className="w-full h-11 text-base gap-2"
+                  size="lg"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Submitting Application...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5" />
+                      Submit Application
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          By submitting this application, you agree to our processing of your data for recruitment purposes.
+        </p>
       </div>
     </div>
   );
