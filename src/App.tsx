@@ -4,11 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Jobs from "@/components/Jobs";
 import Auth from "./pages/Auth";
 import CreateJob from "./pages/CreateJob";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
+import Jobs from "./pages/Jobs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
