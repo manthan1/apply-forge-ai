@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Header } from "@/components/Header";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -88,12 +88,9 @@ export default function CreateJob() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
+      <DashboardLayout>
       
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl flex items-center gap-2">
@@ -171,7 +168,6 @@ export default function CreateJob() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </DashboardLayout>
   );
 }
