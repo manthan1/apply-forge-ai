@@ -13,7 +13,7 @@ export function AppSidebar() {
   const navItems = [
     { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { title: "Jobs", path: "/jobs", icon: Briefcase },
-    { title: "Candidates", path: "/dashboard", icon: Users },
+    { title: "Candidates", path: "/candidates", icon: Users },
   ];
 
   const getInitials = () => {

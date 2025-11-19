@@ -82,7 +82,7 @@ export default function Jobs () {
                                         <TableCell className="text-sm text-muted-foreground">{job.status}</TableCell>
                                         <TableCell>
                                             <div className="flex gap-2">
-                                                <Link to={`/dashboard?jobId=${encodeURIComponent(job.job_id)}`}>
+                                                <Link to={`/candidates?jobId=${encodeURIComponent(job.job_id)}`}>
                                                     <Button size="sm">View Candidates</Button>
                                                 </Link>
                                                 <a href={`/apply?id=${job.id}`} target="_blank" rel="noreferrer">

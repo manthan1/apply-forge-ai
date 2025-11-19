@@ -9,6 +9,7 @@ import CreateJob from "./pages/CreateJob";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
 import Jobs from "./pages/Jobs";
+import Candidates from "./pages/Candidates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidates"
+            element={
+              <ProtectedRoute>
+                <Candidates />
               </ProtectedRoute>
             }
           />

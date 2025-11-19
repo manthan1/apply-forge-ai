@@ -1,0 +1,531 @@
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatusBadge } from "@/components/StatusBadge";
+import { RoleMatchProgress } from "@/components/RoleMatchProgress";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { Search, ThumbsUp, ThumbsDown, MapPin, Mail, Phone, Download, Send, Filter, ArrowLeft } from "lucide-react";
+
+interface AnalyzedResume {
+  id: string;
+  job_id: string;
+  name: string;
+  phone: string;
+  city: string;
+  email: string;
+  educational_details: string;
+  job_history: string;
+  skills: string;
+  summarize: string;
+  vote: string;
+  consideration: string;
+  cv_url: string;
+  created_at: string;
+}
+
+interface JobListing {
+  id: string;
+  job_id: string;
+  job_profile: string;
+  company_name: string;
+  status: string;
+  created_at: string;
+}
+
+export default function Candidates() {
+  const { user, loading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchJobId, setSearchJobId] = useState("");
+  const [candidates, setCandidates] = useState<AnalyzedResume[]>([]);
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<AnalyzedResume | null>(null);
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [isJobSpecificView, setIsJobSpecificView] = useState(false);
+  const [currentJobProfile, setCurrentJobProfile] = useState("");
+  const [currentCompanyName, setCurrentCompanyName] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchJobs();
+    }
+  }, [user?.id]);
+
+  // Handle jobId from URL query params
+  useEffect(() => {
+    const jobId = searchParams.get("jobId");
+    if (jobId && jobs.length > 0) {
+      handleViewJobCandidates(jobId);
+    }
+  }, [searchParams, jobs]);
+
+  const fetchJobs = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from("job_listings")
+        .select("*")
+        .eq("hr_user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setJobs(data || []);
+    } catch (error: any) {
+      console.error("Error fetching jobs:", error);
+      toast.error("Failed to load jobs");
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchJobId.trim()) {
+      toast.error("Please enter a Job ID");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("ai_analysed_resume")
+        .select("*")
+        .eq("job_id", searchJobId.trim());
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast.error("No candidates found for this Job ID");
+        setCandidates([]);
+        return;
+      }
+
+      setCandidates(data);
+      setIsJobSpecificView(false);
+      toast.success(`Found ${data.length} candidate(s)`);
+    } catch (error: any) {
+      console.error("Error searching candidates:", error);
+      toast.error("Failed to search candidates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewJobCandidates = async (jobId: string) => {
+    const job = jobs.find(j => j.job_id === jobId);
+    if (!job) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("ai_analysed_resume")
+        .select("*")
+        .eq("job_id", jobId);
+
+      if (error) throw error;
+
+      setCandidates(data || []);
+      setIsJobSpecificView(true);
+      setCurrentJobProfile(job.job_profile);
+      setCurrentCompanyName(job.company_name);
+      setSearchJobId(jobId);
+    } catch (error: any) {
+      console.error("Error fetching candidates:", error);
+      toast.error("Failed to load candidates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewAllCandidates = () => {
+    setCandidates([]);
+    setIsJobSpecificView(false);
+    setCurrentJobProfile("");
+    setCurrentCompanyName("");
+    setSearchJobId("");
+    setSearchParams({});
+  };
+
+  const handleEmailSelection = (email: string, checked: boolean) => {
+    if (checked) {
+      setSelectedEmails([...selectedEmails, email]);
+    } else {
+      setSelectedEmails(selectedEmails.filter(e => e !== email));
+    }
+  };
+
+  const handleSendBulkEmail = () => {
+    if (selectedEmails.length === 0) {
+      toast.error("Please select at least one candidate");
+      return;
+    }
+
+    const mailtoLink = `mailto:${selectedEmails.join(",")}`;
+    window.location.href = mailtoLink;
+    toast.success(`Opening email client with ${selectedEmails.length} recipient(s)`);
+  };
+
+  const getFilteredCandidates = () => {
+    if (statusFilter === "all") return candidates;
+    return candidates.filter(c => c.vote === statusFilter);
+  };
+
+  const filteredCandidates = getFilteredCandidates();
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            {isJobSpecificView && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleViewAllCandidates}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to All Jobs
+              </Button>
+            )}
+          </div>
+          <h1 className="text-3xl font-bold text-foreground">
+            {isJobSpecificView ? `Candidates for ${currentJobProfile}` : "All Candidates"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isJobSpecificView 
+              ? `${currentCompanyName} • ${filteredCandidates.length} candidate(s)`
+              : "View and manage candidates across all job openings"}
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <Card className="border-border/50">
+          <CardContent className="pt-6">
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Job ID..."
+                  value={searchJobId}
+                  onChange={(e) => setSearchJobId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-9 border-border/50"
+                />
+              </div>
+              <Button onClick={handleSearch} disabled={loading}>
+                Search
+              </Button>
+              {candidates.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleViewAllCandidates}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Candidates by Job */}
+        {!isJobSpecificView && candidates.length === 0 && (
+          <div className="grid gap-4">
+            {jobs.map((job) => (
+              <Card key={job.id} className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-lg text-foreground">{job.job_profile}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{job.company_name}</span>
+                        <span>•</span>
+                        <span>Job ID: {job.job_id}</span>
+                        <Badge variant={job.status === "Active" ? "default" : "secondary"}>
+                          {job.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleViewJobCandidates(job.job_id)}
+                      variant="outline"
+                    >
+                      View Candidates
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Candidates Table */}
+        {candidates.length > 0 && (
+          <Card className="border-border/50">
+            <CardHeader className="border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <CardTitle>Candidates</CardTitle>
+                <div className="flex items-center gap-3">
+                  <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+                    <TabsList>
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      <TabsTrigger value="yes">Shortlisted</TabsTrigger>
+                      <TabsTrigger value="no">Rejected</TabsTrigger>
+                      <TabsTrigger value="maybe">Maybe</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  {selectedEmails.length > 0 && (
+                    <Button
+                      onClick={handleSendBulkEmail}
+                      className="gap-2"
+                      size="sm"
+                    >
+                      <Send className="h-4 w-4" />
+                      Email Selected ({selectedEmails.length})
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={selectedEmails.length === filteredCandidates.length && filteredCandidates.length > 0}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedEmails(filteredCandidates.map(c => c.email));
+                            } else {
+                              setSelectedEmails([]);
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      <TableHead className="font-semibold">CANDIDATE</TableHead>
+                      <TableHead className="font-semibold">CONTACT</TableHead>
+                      <TableHead className="font-semibold">ROLE MATCH</TableHead>
+                      <TableHead className="font-semibold">STATUS</TableHead>
+                      <TableHead className="font-semibold">ACTIONS</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCandidates.map((candidate) => (
+                      <TableRow key={candidate.id} className="hover:bg-muted/20">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedEmails.includes(candidate.email)}
+                            onCheckedChange={(checked) => 
+                              handleEmailSelection(candidate.email, checked as boolean)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {candidate.name?.substring(0, 2).toUpperCase() || "??"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium text-foreground">{candidate.name || "Unknown"}</div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {candidate.city || "N/A"}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">{candidate.email || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">{candidate.phone || "N/A"}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={candidate.vote === "yes" ? "shortlisted" : candidate.vote === "no" ? "rejected" : "new"} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedCandidate(candidate)}
+                            >
+                              View Details
+                            </Button>
+                            {candidate.cv_url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => window.open(candidate.cv_url, "_blank")}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {!loading && candidates.length === 0 && jobs.length === 0 && (
+          <Card className="border-border/50">
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No jobs found. Create your first job to start receiving applications.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Candidate Detail Sheet */}
+      <Sheet open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          {selectedCandidate && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                      {selectedCandidate.name?.substring(0, 2).toUpperCase() || "??"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div>{selectedCandidate.name || "Unknown Candidate"}</div>
+                    <SheetDescription className="flex items-center gap-2 mt-1">
+                      <MapPin className="h-3 w-3" />
+                      {selectedCandidate.city || "Location not specified"}
+                    </SheetDescription>
+                  </div>
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-6">
+                {/* Status and Match */}
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Application Status</p>
+                    <StatusBadge status={selectedCandidate.vote === "yes" ? "shortlisted" : selectedCandidate.vote === "no" ? "rejected" : "new"} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Role Match</p>
+                    <RoleMatchProgress percentage={parseFloat(selectedCandidate.consideration) || 0} />
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div>
+                  <h3 className="font-semibold mb-3 text-foreground">Contact Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">{selectedCandidate.email || "Not provided"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">{selectedCandidate.phone || "Not provided"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* AI Summary */}
+                <div>
+                  <h3 className="font-semibold mb-3 text-foreground">AI Summary</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {selectedCandidate.summarize || "No summary available"}
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Skills */}
+                <div>
+                  <h3 className="font-semibold mb-3 text-foreground">Skills</h3>
+                  <ScrollArea className="h-24">
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {selectedCandidate.skills || "No skills listed"}
+                    </p>
+                  </ScrollArea>
+                </div>
+
+                <Separator />
+
+                {/* Education */}
+                <div>
+                  <h3 className="font-semibold mb-3 text-foreground">Education</h3>
+                  <ScrollArea className="h-24">
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {selectedCandidate.educational_details || "No education details provided"}
+                    </p>
+                  </ScrollArea>
+                </div>
+
+                <Separator />
+
+                {/* Work Experience */}
+                <div>
+                  <h3 className="font-semibold mb-3 text-foreground">Work Experience</h3>
+                  <ScrollArea className="h-32">
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {selectedCandidate.job_history || "No work history provided"}
+                    </p>
+                  </ScrollArea>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <Button className="flex-1 gap-2" onClick={() => window.location.href = `mailto:${selectedCandidate.email}`}>
+                    <Mail className="h-4 w-4" />
+                    Send Email
+                  </Button>
+                  {selectedCandidate.cv_url && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={() => window.open(selectedCandidate.cv_url, "_blank")}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download CV
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </DashboardLayout>
+  );
+}
