@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -47,6 +48,7 @@ interface JobListing {
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
   const [searchJobId, setSearchJobId] = useState("");
   const [candidates, setCandidates] = useState<AnalyzedResume[]>([]);
   const [jobs, setJobs] = useState<JobListing[]>([]);
@@ -64,6 +66,14 @@ export default function Dashboard() {
       fetchJobs();
     }
   }, [user?.id]);
+
+  // Handle jobId from URL query params
+  useEffect(() => {
+    const jobId = searchParams.get("jobId");
+    if (jobId && jobs.length > 0) {
+      handleViewJobCandidates(jobId);
+    }
+  }, [searchParams, jobs]);
 
   const fetchJobs = async () => {
     if (!user?.id) return;
