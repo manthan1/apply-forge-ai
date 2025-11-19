@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RoleMatchProgress } from "@/components/RoleMatchProgress";
+import { CandidateRating } from "@/components/CandidateRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -364,7 +365,10 @@ export default function Candidates() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
+                          <div className="space-y-1">
+                            <CandidateRating percentage={parseFloat(candidate.consideration) || 0} size="sm" />
+                            <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
+                          </div>
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={candidate.vote === "yes" ? "shortlisted" : candidate.vote === "no" ? "rejected" : "new"} />
@@ -432,13 +436,21 @@ export default function Candidates() {
 
               <div className="mt-6 space-y-6">
                 {/* Status and Match */}
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Application Status</p>
                     <StatusBadge status={selectedCandidate.vote === "yes" ? "shortlisted" : selectedCandidate.vote === "no" ? "rejected" : "new"} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Role Match</p>
+                    <p className="text-sm text-muted-foreground mb-2">Candidate Rating</p>
+                    <CandidateRating 
+                      percentage={parseFloat(selectedCandidate.consideration) || 0} 
+                      showLabel={true}
+                      size="md"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground mb-1">Role Match Score</p>
                     <RoleMatchProgress percentage={parseFloat(selectedCandidate.consideration) || 0} />
                   </div>
                 </div>
