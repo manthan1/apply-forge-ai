@@ -2,21 +2,20 @@ import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CandidateRatingProps {
-  percentage: number;
+  vote: string | null;
   showLabel?: boolean;
   size?: "sm" | "md" | "lg";
 }
 
-export function CandidateRating({ percentage, showLabel = false, size = "md" }: CandidateRatingProps) {
-  const getRating = (pct: number) => {
-    if (pct >= 80) return { stars: 5, label: "Excellent Match", color: "text-green-500" };
-    if (pct >= 60) return { stars: 4, label: "Good Match", color: "text-blue-500" };
-    if (pct >= 40) return { stars: 3, label: "Fair Match", color: "text-yellow-500" };
-    if (pct >= 20) return { stars: 2, label: "Poor Match", color: "text-orange-500" };
-    return { stars: 1, label: "Weak Match", color: "text-red-500" };
+export function CandidateRating({ vote, showLabel = false, size = "md" }: CandidateRatingProps) {
+  const getRating = (voteValue: string | null) => {
+    if (voteValue === "yes") return { stars: 5, label: "Shortlisted", color: "text-green-500" };
+    if (voteValue === "maybe") return { stars: 3, label: "Under Review", color: "text-yellow-500" };
+    if (voteValue === "no") return { stars: 1, label: "Rejected", color: "text-red-500" };
+    return { stars: 0, label: "Not Rated", color: "text-muted-foreground" };
   };
 
-  const rating = getRating(percentage);
+  const rating = getRating(vote);
   const sizeClasses = {
     sm: "h-3 w-3",
     md: "h-4 w-4",

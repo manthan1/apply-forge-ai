@@ -366,7 +366,7 @@ export default function Candidates() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <CandidateRating percentage={parseFloat(candidate.consideration) || 0} size="sm" />
+                            <CandidateRating vote={candidate.vote} size="sm" />
                             <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
                           </div>
                         </TableCell>
@@ -442,15 +442,15 @@ export default function Candidates() {
                     <StatusBadge status={selectedCandidate.vote === "yes" ? "shortlisted" : selectedCandidate.vote === "no" ? "rejected" : "new"} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Candidate Rating</p>
+                    <p className="text-sm text-muted-foreground mb-2">AI Rating</p>
                     <CandidateRating 
-                      percentage={parseFloat(selectedCandidate.consideration) || 0} 
+                      vote={selectedCandidate.vote} 
                       showLabel={true}
                       size="md"
                     />
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground mb-1">Role Match Score</p>
+                    <p className="text-sm text-muted-foreground mb-1">Match Score: {selectedCandidate.consideration}%</p>
                     <RoleMatchProgress percentage={parseFloat(selectedCandidate.consideration) || 0} />
                   </div>
                 </div>
