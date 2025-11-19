@@ -12,9 +12,8 @@ export function AppSidebar() {
 
   const navItems = [
     { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { title: "Jobs", path: "/", icon: Briefcase },
+    { title: "Jobs", path: "/jobs", icon: Briefcase },
     { title: "Candidates", path: "/dashboard", icon: Users },
-    { title: "Analytics", path: "/dashboard", icon: BarChart3 },
   ];
 
   const getInitials = () => {
@@ -70,25 +69,13 @@ export function AppSidebar() {
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-              {getInitials()}
-            </AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">{getInitials()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user?.email?.split("@")[0] || "HR User"}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              Head of Talent
-            </p>
+            <p className="text-sm font-medium text-foreground truncate">{user?.email?.split("@")[0] || "HR User"}</p>
+            <p className="text-xs text-muted-foreground truncate">Head of Talent</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={signOut}
-            title="Settings"
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={signOut} title="Settings">
             <Settings className="h-4 w-4" />
           </Button>
         </div>
