@@ -28,6 +28,7 @@ export type Database = {
           name: string | null
           phone: string | null
           skills: string | null
+          status: string | null
           summarize: string | null
           vote: string | null
         }
@@ -44,6 +45,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           skills?: string | null
+          status?: string | null
           summarize?: string | null
           vote?: string | null
         }
@@ -60,6 +62,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           skills?: string | null
+          status?: string | null
           summarize?: string | null
           vote?: string | null
         }
