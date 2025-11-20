@@ -24,20 +24,19 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[240px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <aside className="fixed left-0 top-0 h-screen w-[240px] glass-effect border-r border-border/50 flex flex-col shadow-xl">
       {/* Logo */}
-      <div className="p-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">L</span>
+      <div className="p-6 pb-4">
+        <div className="flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
+            <Briefcase className="h-6 w-6 text-white" />
           </div>
-          <span className="text-lg font-semibold text-foreground">Lumina</span>
         </div>
       </div>
 
       {/* Create New Job Button */}
-      <div className="px-4 mb-6">
-        <Button asChild className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+      <div className="px-4 mb-8">
+        <Button asChild className="w-full justify-start gap-2">
           <Link to="/">
             <Plus className="h-4 w-4" />
             Create New Job
@@ -47,18 +46,18 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3">
-        <div className="space-y-1">
+        <div className="space-y-2">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold smooth-transition ${
                 isActive(item.path)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
               }`}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-5 w-5" />
               {item.title}
             </Link>
           ))}
@@ -66,16 +65,16 @@ export function AppSidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-border/50 m-3 rounded-xl">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">{getInitials()}</AvatarFallback>
+          <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">{getInitials()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.email?.split("@")[0] || "HR User"}</p>
-            <p className="text-xs text-muted-foreground truncate">Head of Talent</p>
+            <p className="text-sm font-semibold text-foreground truncate">{user?.email?.split("@")[0] || "HR User"}</p>
+            <p className="text-xs text-muted-foreground truncate">HR Manager</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={signOut} title="Settings">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-accent" onClick={signOut} title="Logout">
             <Settings className="h-4 w-4" />
           </Button>
         </div>

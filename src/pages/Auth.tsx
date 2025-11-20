@@ -81,21 +81,20 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-xl">L</span>
+        <div className="flex items-center justify-center mb-8">
+          <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center shadow-2xl">
+            <Briefcase className="h-8 w-8 text-white" />
           </div>
-          <span className="text-2xl font-bold text-foreground">Lumina</span>
         </div>
 
-        <Card className="border-border/50 shadow-xl">
-          <CardHeader className="text-center space-y-2 pb-4">
+        <Card className="glass-effect border-0 card-shadow-lg">
+          <CardHeader className="text-center space-y-3 pb-6">
             <div className="flex justify-center mb-2">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <Briefcase className="h-8 w-8 text-primary" />
+              <div className="p-4 bg-primary/10 rounded-2xl">
+                <Building2 className="h-10 w-10 text-primary" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">HR Portal</CardTitle>
@@ -105,15 +104,15 @@ export default function Auth() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" className="text-sm">Sign In</TabsTrigger>
-                <TabsTrigger value="signup" className="text-sm">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-secondary/50 rounded-xl h-11">
+                <TabsTrigger value="signin" className="text-sm font-semibold rounded-lg">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="text-sm font-semibold rounded-lg">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-sm font-medium">
+                    <Label htmlFor="signin-email" className="font-semibold">
                       Email Address
                     </Label>
                     <Input
@@ -125,11 +124,11 @@ export default function Auth() {
                         setSignInData({ ...signInData, email: e.target.value })
                       }
                       required
-                      className="h-11"
+                      className="h-11 rounded-xl"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-sm font-medium">
+                    <Label htmlFor="signin-password" className="font-semibold">
                       Password
                     </Label>
                     <Input
@@ -141,7 +140,7 @@ export default function Auth() {
                         setSignInData({ ...signInData, password: e.target.value })
                       }
                       required
-                      className="h-11"
+                      className="h-11 rounded-xl"
                     />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-11 mt-2">
@@ -160,7 +159,7 @@ export default function Auth() {
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-company" className="text-sm font-medium">
+                    <Label htmlFor="signup-company" className="font-semibold">
                       Company Name
                     </Label>
                     <div className="relative">
@@ -174,12 +173,12 @@ export default function Auth() {
                           setSignUpData({ ...signUpData, companyName: e.target.value })
                         }
                         required
-                        className="h-11 pl-10"
+                        className="pl-10 h-11 rounded-xl"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-sm font-medium">
+                    <Label htmlFor="signup-email" className="font-semibold">
                       Email Address
                     </Label>
                     <Input
@@ -191,11 +190,11 @@ export default function Auth() {
                         setSignUpData({ ...signUpData, email: e.target.value })
                       }
                       required
-                      className="h-11"
+                      className="h-11 rounded-xl"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-sm font-medium">
+                    <Label htmlFor="signup-password" className="font-semibold">
                       Password
                     </Label>
                     <Input
@@ -207,11 +206,9 @@ export default function Auth() {
                         setSignUpData({ ...signUpData, password: e.target.value })
                       }
                       required
-                      className="h-11"
+                      minLength={6}
+                      className="h-11 rounded-xl"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Must be at least 6 characters long
-                    </p>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-11 mt-2">
                     {loading ? (
@@ -228,10 +225,6 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
       </div>
     </div>
   );

@@ -87,32 +87,36 @@ export default function CreateJob() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              Create Dynamic Job Application Form
-            </CardTitle>
-            <CardDescription>
-              Describe your job requirements in plain English and we'll create a structured application form
-            </CardDescription>
+      <div className="max-w-3xl mx-auto">
+        <Card className="glass-effect border-0 card-shadow-lg">
+          <CardHeader className="border-b border-border/50 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
+                <Sparkles className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">Create Job Application Form</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Describe your job requirements and we'll create a structured form
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleCreateForm} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="job-details">Job Details</Label>
+              <div className="space-y-3">
+                <Label htmlFor="job-details" className="text-base font-semibold">Job Details</Label>
                 <Textarea
                   id="job-details"
                   placeholder="E.g., We're looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and AWS. The role involves leading development of our main product platform..."
                   value={jobPrompt}
                   onChange={(e) => setJobPrompt(e.target.value)}
                   required
-                  className="min-h-[200px]"
+                  className="min-h-[220px] rounded-xl resize-none"
                 />
               </div>
 
-              <Button type="submit" disabled={loading} className="w-full">
+              <Button type="submit" disabled={loading} className="w-full h-12">
                 {loading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
@@ -121,42 +125,45 @@ export default function CreateJob() {
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Create Form
+                    Generate Application Form
                   </>
                 )}
               </Button>
             </form>
 
             {shareLink && (
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <Label className="text-sm font-medium">Share this link with candidates:</Label>
-                <div className="flex gap-2 mt-2">
+              <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+                <Label className="text-sm font-semibold text-success mb-3 flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Your Job Form is Ready!
+                </Label>
+                <div className="flex gap-2 mt-3">
                   <input
                     type="text"
                     value={shareLink}
                     readOnly
-                    className="flex-1 px-3 py-2 text-sm bg-background border border-input rounded-md"
+                    className="flex-1 px-4 py-2.5 text-sm bg-background/50 border border-border rounded-xl"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={copyToClipboard}
-                    className="gap-2"
+                    className="h-11 px-6"
                   >
                     {copied ? (
                       <>
-                        <Check className="h-4 w-4" />
+                        <Check className="h-4 w-4 mr-2" />
                         Copied
                       </>
                     ) : (
                       <>
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-4 w-4 mr-2" />
                         Copy
                       </>
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-3">
                   Share this link with candidates to collect applications
                 </p>
               </div>
