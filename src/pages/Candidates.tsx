@@ -371,7 +371,7 @@ export default function Candidates() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
+                          <RoleMatchProgress percentage={(parseFloat(candidate.vote) || 0) * 10} />
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={candidate.vote === "yes" ? "shortlisted" : candidate.vote === "no" ? "rejected" : "new"} />
