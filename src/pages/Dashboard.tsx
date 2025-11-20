@@ -104,127 +104,110 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's your recruitment overview.</p>
-        </div>
+      {/* Header with Gradient */}
+      <div className="mb-8 rounded-3xl gradient-primary p-8 text-white shadow-2xl">
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.email?.split("@")[0] || "HR Manager"}</h1>
+        <p className="text-white/90 text-base">Here's your recruitment overview</p>
+      </div>
 
-        {/* Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Total Candidates"
-            value={totalCandidatesCount}
-            icon={Users}
-            iconColor="text-blue-500"
-            trend="+12%"
-          />
-          <MetricCard
-            title="Active Jobs"
-            value={activeJobs}
-            icon={Briefcase}
-            iconColor="text-green-500"
-            trend="+2"
-          />
-          <MetricCard
-            title="Shortlisted"
-            value={shortlistedCount}
-            icon={TrendingUp}
-            iconColor="text-orange-500"
-            trend="+8%"
-          />
-          <MetricCard
-            title="Pending Review"
-            value={totalCandidatesCount - shortlistedCount}
-            icon={Clock}
-            iconColor="text-purple-500"
-            trend="0"
-          />
-        </div>
+      {/* Metrics Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <MetricCard
+          title="Total Candidates"
+          value={totalCandidatesCount}
+          icon={Users}
+          iconColor="bg-gradient-to-br from-blue-500 to-blue-600"
+        />
+        <MetricCard
+          title="Active Jobs"
+          value={activeJobs}
+          icon={Briefcase}
+          iconColor="bg-gradient-to-br from-purple-500 to-purple-600"
+        />
+        <MetricCard
+          title="Shortlisted"
+          value={shortlistedCount}
+          icon={TrendingUp}
+          iconColor="bg-gradient-to-br from-green-500 to-green-600"
+        />
+        <MetricCard
+          title="Pending Review"
+          value={totalCandidatesCount - shortlistedCount}
+          icon={Clock}
+          iconColor="bg-gradient-to-br from-orange-500 to-orange-600"
+        />
+      </div>
 
-        {/* Active Jobs Overview */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5" />
-              Active Job Openings
-            </CardTitle>
+      {/* Grid Layout for Jobs and Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Active Job Openings - 2 columns */}
+        <Card className="lg:col-span-2 glass-effect border-0 card-shadow-lg">
+          <CardHeader className="border-b border-border/50 pb-4">
+            <CardTitle className="text-xl font-bold">Active Job Openings</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="font-semibold">JOB TITLE</TableHead>
-                    <TableHead className="font-semibold">COMPANY</TableHead>
-                    <TableHead className="font-semibold">APPLICANTS</TableHead>
-                    <TableHead className="font-semibold">STATUS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {jobs.slice(0, 5).map((job) => (
-                    <TableRow key={job.id} className="hover:bg-muted/20">
-                      <TableCell>
-                        <div className="font-medium text-foreground">{job.job_profile}</div>
-                        <div className="text-sm text-muted-foreground">ID: {job.job_id}</div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{job.company_name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {applicantCount[job.job_id] || 0} applicants
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={job.status === "Active" ? "default" : "secondary"}>
-                          {job.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {jobs.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        No jobs created yet. Create your first job to get started.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Activity Log */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-4">
-                {activityLogs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-3 pb-4 border-b border-border/50 last:border-0">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-primary flex-shrink-0" />
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium text-foreground">{log.action}</p>
-                      <p className="text-sm text-muted-foreground">{log.details}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {log.timestamp}
-                      </p>
+          <CardContent className="p-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>No active job listings</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {jobs.filter(job => job.status === "Active").slice(0, 5).map((job) => (
+                  <div
+                    key={job.id}
+                    className="p-4 rounded-xl bg-secondary/30 hover:bg-secondary/50 smooth-transition border border-border/50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{job.job_profile}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{job.company_name}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-primary">{applicantCount[job.job_id] || 0}</p>
+                          <p className="text-xs text-muted-foreground">Applicants</p>
+                        </div>
+                        <Badge className="bg-success/10 text-success hover:bg-success/20">Active</Badge>
+                      </div>
                     </div>
                   </div>
                 ))}
-                {activityLogs.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    No recent activity. Start by creating a job and receiving applications.
-                  </div>
-                )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity - 1 column */}
+        <Card className="glass-effect border-0 card-shadow-lg">
+          <CardHeader className="border-b border-border/50 pb-4">
+            <CardTitle className="text-xl font-bold">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ScrollArea className="h-[400px] pr-4">
+              {activityLogs.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Activity className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No recent activity</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activityLogs.map((log) => (
+                    <div key={log.id} className="flex gap-3 items-start group">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2 ring-4 ring-primary/20 group-hover:ring-primary/40 smooth-transition"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{log.action}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{log.details}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{log.timestamp}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </ScrollArea>
           </CardContent>
         </Card>

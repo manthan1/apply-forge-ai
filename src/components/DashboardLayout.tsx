@@ -7,16 +7,15 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full">
       <AppSidebar />
       <div className="flex-1 ml-[240px]">
         {/* Top Bar */}
-        <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
-          <h1 className="text-sm font-medium text-muted-foreground">Lumina HR</h1>
+        <header className="h-16 glass-effect sticky top-0 z-10 flex items-center justify-end px-8">
           <div className="flex items-center gap-4">
-            <button className="text-sm text-muted-foreground hover:text-foreground">
-              Device
-            </button>
+            <div className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+            </div>
           </div>
         </header>
 
