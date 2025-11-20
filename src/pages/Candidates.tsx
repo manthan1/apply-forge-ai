@@ -320,6 +320,7 @@ export default function Candidates() {
                       </TableHead>
                       <TableHead className="font-semibold">CANDIDATE</TableHead>
                       <TableHead className="font-semibold">CONTACT</TableHead>
+                      <TableHead className="font-semibold">AI RATING</TableHead>
                       <TableHead className="font-semibold">ROLE MATCH</TableHead>
                       <TableHead className="font-semibold">STATUS</TableHead>
                       <TableHead className="font-semibold">ACTIONS</TableHead>
@@ -365,10 +366,12 @@ export default function Candidates() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <CandidateRating vote={candidate.vote} size="sm" />
-                            <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
+                          <div className="flex items-center justify-center">
+                            <span className="text-lg font-semibold text-foreground">{candidate.vote || "N/A"}</span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <RoleMatchProgress percentage={parseFloat(candidate.consideration) || 0} />
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={candidate.vote === "yes" ? "shortlisted" : candidate.vote === "no" ? "rejected" : "new"} />
