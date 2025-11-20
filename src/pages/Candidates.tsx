@@ -446,15 +446,14 @@ export default function Candidates() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">AI Rating</p>
-                    <CandidateRating 
-                      vote={selectedCandidate.vote} 
-                      showLabel={true}
-                      size="md"
-                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-foreground">{selectedCandidate.vote || "N/A"}</span>
+                      <span className="text-sm text-muted-foreground">/10</span>
+                    </div>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground mb-1">Match Score: {selectedCandidate.consideration}%</p>
-                    <RoleMatchProgress percentage={parseFloat(selectedCandidate.consideration) || 0} />
+                    <p className="text-sm text-muted-foreground mb-2">Role Match</p>
+                    <RoleMatchProgress percentage={(parseFloat(selectedCandidate.vote) || 0) * 10} />
                   </div>
                 </div>
 
