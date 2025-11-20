@@ -50,20 +50,20 @@ export default function Jobs () {
 
     return (
         <DashboardLayout>
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-foreground">Jobs</h1>
-                <p className="text-muted-foreground">Jobs you've created and shared with candidates.</p>
+            <div className="mb-10 space-y-3">
+                <h1 className="text-4xl font-bold text-foreground tracking-tight">Jobs</h1>
+                <p className="text-base text-muted-foreground">Jobs you've created and shared with candidates.</p>
             </div>
 
-            <Card className="border-border/50">
-                <CardHeader>
-                    <CardTitle>Openings</CardTitle>
+            <Card className="p-8">
+                <CardHeader className="pb-6">
+                    <CardTitle className="text-2xl">Openings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                    <div className="rounded-2xl border border-border/30 overflow-hidden card-shadow">
                         <Table>
                             <TableHeader>
-                                <TableRow className="bg-muted/30">
+                                <TableRow className="bg-muted/20 hover:bg-muted/30">
                                     <TableHead className="font-semibold">ROLE</TableHead>
                                     <TableHead className="font-semibold">JOB ID</TableHead>
                                     <TableHead className="font-semibold">COMPANY</TableHead>
@@ -73,17 +73,17 @@ export default function Jobs () {
                             </TableHeader>
                             <TableBody>
                                 {jobs.map((job) => (
-                                    <TableRow key={job.id}>
-                                        <TableCell>
-                                            <div className="font-medium text-foreground">{job.job_profile}</div>
+                                    <TableRow key={job.id} className="smooth-transition hover:bg-muted/10">
+                                        <TableCell className="py-5">
+                                            <div className="font-semibold text-foreground text-base">{job.job_profile}</div>
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{job.job_id}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{job.company_name}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{job.status}</TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-2">
+                                        <TableCell className="text-sm text-muted-foreground py-5">{job.job_id}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground py-5">{job.company_name}</TableCell>
+                                        <TableCell className="py-5"><span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${job.status === 'Active' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>{job.status}</span></TableCell>
+                                        <TableCell className="py-5">
+                                            <div className="flex gap-3">
                                                 <Link to={`/candidates?jobId=${encodeURIComponent(job.job_id)}`}>
-                                                    <Button size="sm">View Candidates</Button>
+                                                    <Button size="sm" className="rounded-xl">View Candidates</Button>
                                                 </Link>
                                                 <a href={`/apply?id=${job.id}`} target="_blank" rel="noreferrer">
                                                     <Button variant="outline" size="sm">Preview</Button>
