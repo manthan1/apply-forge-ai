@@ -35,6 +35,7 @@ interface AnalyzedResume {
   consideration: string;
   cv_url: string;
   created_at: string;
+  status: string;
 }
 
 interface JobListing {
@@ -59,6 +60,8 @@ export default function Candidates() {
   const [currentJobProfile, setCurrentJobProfile] = useState("");
   const [currentCompanyName, setCurrentCompanyName] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -125,10 +128,10 @@ export default function Candidates() {
   };
 
   const handleViewJobCandidates = async (jobId: string) => {
-    const job = jobs.find(j => j.job_id === jobId);
-    if (!job) return;
-
     setLoading(true);
+    setIsJobSpecificView(true);
+    setSelectedCandidates([]); // Clear selection when switching jobs
+    
     try {
       const { data, error } = await (supabase as any)
         .from("ai_analysed_resume")
@@ -138,10 +141,12 @@ export default function Candidates() {
       if (error) throw error;
 
       setCandidates(data || []);
-      setIsJobSpecificView(true);
-      setCurrentJobProfile(job.job_profile);
-      setCurrentCompanyName(job.company_name);
-      setSearchJobId(jobId);
+      
+      const job = jobs.find(j => j.job_id === jobId);
+      if (job) {
+        setCurrentJobProfile(job.job_profile);
+        setCurrentCompanyName(job.company_name);
+      }
     } catch (error: any) {
       console.error("Error fetching candidates:", error);
       toast.error("Failed to load candidates");
@@ -157,30 +162,91 @@ export default function Candidates() {
     setCurrentCompanyName("");
     setSearchJobId("");
     setSearchParams({});
+    setSelectedCandidates([]);
   };
 
-  const handleEmailSelection = (email: string, checked: boolean) => {
-    if (checked) {
-      setSelectedEmails([...selectedEmails, email]);
+  const handleToggleCandidate = (candidateId: string) => {
+    setSelectedCandidates(prev => 
+      prev.includes(candidateId) 
+        ? prev.filter(id => id !== candidateId)
+        : [...prev, candidateId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCandidates.length === filteredCandidates.length) {
+      setSelectedCandidates([]);
     } else {
-      setSelectedEmails(selectedEmails.filter(e => e !== email));
+      setSelectedCandidates(filteredCandidates.map(c => c.id));
     }
   };
 
-  const handleSendBulkEmail = () => {
-    if (selectedEmails.length === 0) {
+  const handleShortlistAndSendEmails = async () => {
+    if (selectedCandidates.length === 0) {
       toast.error("Please select at least one candidate");
       return;
     }
 
-    const mailtoLink = `mailto:${selectedEmails.join(",")}`;
-    window.location.href = mailtoLink;
-    toast.success(`Opening email client with ${selectedEmails.length} recipient(s)`);
+    if (!isJobSpecificView) {
+      toast.error("This action is only available when viewing job-specific candidates");
+      return;
+    }
+
+    setIsSendingEmails(true);
+    try {
+      // Get selected candidate details
+      const selectedCandidateData = candidates.filter(c => selectedCandidates.includes(c.id));
+      
+      // Update status to 'shortlisted' in database
+      const { error: updateError } = await (supabase as any)
+        .from("ai_analysed_resume")
+        .update({ status: 'shortlisted' })
+        .in('id', selectedCandidates);
+
+      if (updateError) throw updateError;
+
+      // Send emails to webhook
+      const emails = selectedCandidateData.map(c => c.email);
+      const response = await fetch('https://n8n.srv898271.hstgr.cloud/webhook/selected_candidates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emails,
+          job_profile: currentJobProfile,
+          company_name: currentCompanyName
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to send emails');
+
+      toast.success(`Successfully shortlisted ${selectedCandidates.length} candidate(s) and sent emails`);
+      
+      // Refresh candidates to show updated status
+      if (isJobSpecificView) {
+        const jobId = candidates[0]?.job_id;
+        if (jobId) {
+          await handleViewJobCandidates(jobId);
+        }
+      }
+      
+      setSelectedCandidates([]);
+    } catch (error: any) {
+      console.error("Error shortlisting candidates:", error);
+      toast.error("Failed to shortlist candidates and send emails");
+    } finally {
+      setIsSendingEmails(false);
+    }
   };
 
   const getFilteredCandidates = () => {
     if (statusFilter === "all") return candidates;
-    return candidates.filter(c => c.vote === statusFilter);
+    if (statusFilter === "new") return candidates.filter(c => c.status === "new");
+    if (statusFilter === "shortlisted") return candidates.filter(c => c.status === "shortlisted");
+    if (statusFilter === "rejected") return candidates.filter(c => c.status === "rejected");
+    if (statusFilter === "interviewed") return candidates.filter(c => c.status === "interviewed");
+    return candidates;
   };
 
   const filteredCandidates = getFilteredCandidates();
@@ -283,19 +349,21 @@ export default function Candidates() {
                   <Tabs value={statusFilter} onValueChange={setStatusFilter}>
                     <TabsList>
                       <TabsTrigger value="all">All</TabsTrigger>
-                      <TabsTrigger value="yes">Shortlisted</TabsTrigger>
-                      <TabsTrigger value="no">Rejected</TabsTrigger>
-                      <TabsTrigger value="maybe">Maybe</TabsTrigger>
+                      <TabsTrigger value="new">New</TabsTrigger>
+                      <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
+                      <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                      <TabsTrigger value="interviewed">Interviewed</TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  {selectedEmails.length > 0 && (
+                  {isJobSpecificView && selectedCandidates.length > 0 && (
                     <Button
-                      onClick={handleSendBulkEmail}
+                      onClick={handleShortlistAndSendEmails}
+                      disabled={isSendingEmails}
                       className="gap-2"
                       size="sm"
                     >
                       <Send className="h-4 w-4" />
-                      Email Selected ({selectedEmails.length})
+                      Shortlist & Send Emails ({selectedCandidates.length})
                     </Button>
                   )}
                 </div>
@@ -306,18 +374,14 @@ export default function Candidates() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30">
-                      <TableHead className="w-[50px]">
-                        <Checkbox
-                          checked={selectedEmails.length === filteredCandidates.length && filteredCandidates.length > 0}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedEmails(filteredCandidates.map(c => c.email));
-                            } else {
-                              setSelectedEmails([]);
-                            }
-                          }}
-                        />
-                      </TableHead>
+                      {isJobSpecificView && (
+                        <TableHead className="w-[50px]">
+                          <Checkbox
+                            checked={selectedCandidates.length === filteredCandidates.length && filteredCandidates.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead className="font-semibold">CANDIDATE</TableHead>
                       <TableHead className="font-semibold">CONTACT</TableHead>
                       <TableHead className="font-semibold">AI RATING</TableHead>
@@ -329,14 +393,14 @@ export default function Candidates() {
                   <TableBody>
                     {filteredCandidates.map((candidate) => (
                       <TableRow key={candidate.id} className="hover:bg-muted/20">
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedEmails.includes(candidate.email)}
-                            onCheckedChange={(checked) => 
-                              handleEmailSelection(candidate.email, checked as boolean)
-                            }
-                          />
-                        </TableCell>
+                        {isJobSpecificView && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedCandidates.includes(candidate.id)}
+                              onCheckedChange={() => handleToggleCandidate(candidate.id)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
@@ -374,7 +438,7 @@ export default function Candidates() {
                           <RoleMatchProgress percentage={(parseFloat(candidate.vote) || 0) * 10} />
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={candidate.vote === "yes" ? "shortlisted" : candidate.vote === "no" ? "rejected" : "new"} />
+                          <StatusBadge status={candidate.status || "new"} />
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
