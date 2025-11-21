@@ -8,7 +8,7 @@ import { RoleMatchProgress } from "@/components/RoleMatchProgress";
 import { CandidateRating } from "@/components/CandidateRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -17,8 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, ThumbsUp, ThumbsDown, MapPin, Mail, Phone, Download, Send, Filter, ArrowLeft } from "lucide-react";
+import { Search, ThumbsUp, ThumbsDown, MapPin, Mail, Phone, Download, Send, Filter, ArrowLeft, Scale, Loader2, TrendingUp, TrendingDown } from "lucide-react";
 
 interface AnalyzedResume {
   id: string;
@@ -42,6 +43,7 @@ interface JobListing {
   id: string;
   job_id: string;
   job_profile: string;
+  job_description: string;
   company_name: string;
   status: string;
   created_at: string;
@@ -62,6 +64,10 @@ export default function Candidates() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
+  const [isComparing, setIsComparing] = useState(false);
+  const [comparisonResults, setComparisonResults] = useState<any>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -131,6 +137,7 @@ export default function Candidates() {
     setLoading(true);
     setIsJobSpecificView(true);
     setSelectedCandidates([]); // Clear selection when switching jobs
+    setCompareSelection([]); // Clear comparison selection
     
     try {
       const { data, error } = await (supabase as any)
@@ -163,6 +170,74 @@ export default function Candidates() {
     setSearchJobId("");
     setSearchParams({});
     setSelectedCandidates([]);
+    setCompareSelection([]);
+  };
+
+  const handleToggleCompare = (candidateId: string) => {
+    setCompareSelection(prev => {
+      const newSelection = prev.includes(candidateId)
+        ? prev.filter(id => id !== candidateId)
+        : [...prev, candidateId];
+      
+      // Limit to 5 candidates
+      if (newSelection.length > 5) {
+        toast.error("You can compare up to 5 candidates at once");
+        return prev;
+      }
+      
+      return newSelection;
+    });
+  };
+
+  const handleCompareCandidates = async () => {
+    if (compareSelection.length < 2 || compareSelection.length > 5) {
+      toast.error("Please select 2-5 candidates to compare");
+      return;
+    }
+
+    setIsComparing(true);
+    try {
+      const selectedCandidateData = candidates.filter(c => compareSelection.includes(c.id));
+      const job = jobs.find(j => j.job_id === candidates[0]?.job_id);
+
+      const response = await fetch('https://n8n.srv898271.hstgr.cloud/webhook/compare_candidates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hr_user_id: user?.id,
+          job_id: candidates[0]?.job_id,
+          job_title: job?.job_profile || currentJobProfile,
+          job_description: job?.job_description || "",
+          candidates: selectedCandidateData.map(c => ({
+            id: c.id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            city: c.city,
+            skills: c.skills,
+            educational_details: c.educational_details,
+            job_history: c.job_history,
+            summarize: c.summarize,
+            vote: c.vote,
+            consideration: c.consideration,
+          })),
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to compare candidates');
+
+      const data = await response.json();
+      setComparisonResults(data);
+      setShowComparison(true);
+      toast.success("Candidates compared successfully!");
+    } catch (error: any) {
+      console.error("Error comparing candidates:", error);
+      toast.error("Failed to compare candidates");
+    } finally {
+      setIsComparing(false);
+    }
   };
 
   const handleToggleCandidate = (candidateId: string) => {
@@ -399,6 +474,11 @@ export default function Candidates() {
                           />
                         </TableHead>
                       )}
+                      <TableHead className="w-[50px]">
+                        <div className="flex items-center gap-1">
+                          <Scale className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      </TableHead>
                       <TableHead className="font-semibold">CANDIDATE</TableHead>
                       <TableHead className="font-semibold">CONTACT</TableHead>
                       <TableHead className="font-semibold">AI RATING</TableHead>
@@ -418,6 +498,12 @@ export default function Candidates() {
                             />
                           </TableCell>
                         )}
+                        <TableCell>
+                          <Checkbox
+                            checked={compareSelection.includes(candidate.id)}
+                            onCheckedChange={() => handleToggleCompare(candidate.id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
@@ -495,6 +581,155 @@ export default function Candidates() {
           </Card>
         )}
       </div>
+
+      {/* Floating Action Bar for Comparison */}
+      {compareSelection.length >= 2 && compareSelection.length <= 5 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4">
+          <Card className="glass-card border-primary/20 shadow-2xl">
+            <CardContent className="py-4 px-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-foreground">
+                    {compareSelection.length} candidate{compareSelection.length > 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <Separator orientation="vertical" className="h-6" />
+                <Button
+                  onClick={handleCompareCandidates}
+                  disabled={isComparing}
+                  className="gap-2"
+                >
+                  {isComparing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Comparing...
+                    </>
+                  ) : (
+                    <>
+                      <Scale className="h-4 w-4" />
+                      Compare Candidates
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCompareSelection([])}
+                >
+                  Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Comparison Results Dialog */}
+      <Dialog open={showComparison} onOpenChange={setShowComparison}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Scale className="h-6 w-6 text-primary" />
+              Candidate Comparison
+            </DialogTitle>
+            <DialogDescription>
+              AI-powered side-by-side comparison of selected candidates
+            </DialogDescription>
+          </DialogHeader>
+          
+          {comparisonResults && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-6">
+              {comparisonResults.candidates?.map((candidate: any, index: number) => (
+                <Card key={index} className="glass-card hover-lift">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge 
+                        variant={candidate.ranking === 1 ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        Rank #{candidate.ranking}
+                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <span className="text-2xl font-bold text-primary">{candidate.overall_score}</span>
+                        <span className="text-sm text-muted-foreground">/10</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {candidate.name?.substring(0, 2).toUpperCase() || "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-sm font-semibold">{candidate.name}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{candidate.email}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Match Summary */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                        Match Summary
+                      </p>
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {candidate.match_summary || "No summary available"}
+                      </p>
+                    </div>
+
+                    {/* Strengths */}
+                    <div>
+                      <p className="text-xs font-semibold text-success uppercase mb-2 flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        Strengths
+                      </p>
+                      <ul className="space-y-1">
+                        {candidate.strengths?.map((strength: string, i: number) => (
+                          <li key={i} className="text-xs text-foreground flex items-start gap-1">
+                            <span className="text-success mt-0.5">•</span>
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Weaknesses */}
+                    <div>
+                      <p className="text-xs font-semibold text-destructive uppercase mb-2 flex items-center gap-1">
+                        <TrendingDown className="h-3 w-3" />
+                        Weaknesses
+                      </p>
+                      <ul className="space-y-1">
+                        {candidate.weaknesses?.map((weakness: string, i: number) => (
+                          <li key={i} className="text-xs text-foreground flex items-start gap-1">
+                            <span className="text-destructive mt-0.5">•</span>
+                            <span>{weakness}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Recommendation */}
+                    <div className="pt-2 border-t border-border/50">
+                      <Badge 
+                        variant={
+                          candidate.recommendation?.toLowerCase().includes('highly') ? 'default' :
+                          candidate.recommendation?.toLowerCase().includes('not') ? 'destructive' :
+                          'secondary'
+                        }
+                        className="w-full justify-center py-1"
+                      >
+                        {candidate.recommendation || "Pending Review"}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Candidate Detail Sheet */}
       <Sheet open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
