@@ -242,7 +242,7 @@ export default function Candidates() {
 
   const getFilteredCandidates = () => {
     if (statusFilter === "all") return candidates;
-    if (statusFilter === "new") return candidates.filter(c => c.status === "new");
+    if (statusFilter === "new") return candidates.filter(c => !c.status || c.status === "new");
     if (statusFilter === "shortlisted") return candidates.filter(c => c.status === "shortlisted");
     if (statusFilter === "rejected") return candidates.filter(c => c.status === "rejected");
     if (statusFilter === "interviewed") return candidates.filter(c => c.status === "interviewed");
