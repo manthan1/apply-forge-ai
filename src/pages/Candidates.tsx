@@ -229,10 +229,44 @@ export default function Candidates() {
       if (!response.ok) throw new Error('Failed to compare candidates');
 
       const data = await response.json();
-      // Extract rankings from the webhook response structure
-      const rankings = Array.isArray(data) && data[0]?.message?.content?.rankings 
-        ? data[0].message.content.rankings 
-        : data;
+      // Normalize rankings from different possible webhook response shapes (object or array)
+      let rankings: any[] | null = null;
+
+      if (Array.isArray(data)) {
+        const content = data[0]?.message?.content;
+        if (content) {
+          if (typeof content === "string") {
+            try {
+              const parsed = JSON.parse(content);
+              rankings = parsed.rankings || parsed;
+            } catch (e) {
+              console.error("Failed to parse string content from comparison webhook:", e);
+            }
+          } else {
+            rankings = content.rankings || content;
+          }
+        }
+      } else if (data?.message?.content) {
+        const content = data.message.content;
+        if (typeof content === "string") {
+          try {
+            const parsed = JSON.parse(content);
+            rankings = parsed.rankings || parsed;
+          } catch (e) {
+            console.error("Failed to parse string content from comparison webhook (object):", e);
+          }
+        } else {
+          rankings = content.rankings || content;
+        }
+      }
+
+      if (!rankings || !Array.isArray(rankings)) {
+        console.error("Unexpected comparison webhook response shape", data);
+        toast.error("Received unexpected comparison data format from AI");
+        return;
+      }
+
+      console.log("Comparison rankings:", rankings);
       setComparisonResults(rankings);
       setShowComparison(true);
       toast.success("Candidates compared successfully!");
