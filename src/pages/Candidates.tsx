@@ -644,92 +644,97 @@ export default function Candidates() {
           
           {comparisonResults && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-6">
-              {comparisonResults.candidates?.map((candidate: any, index: number) => (
-                <Card key={index} className="glass-card hover-lift">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge 
-                        variant={candidate.ranking === 1 ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        Rank #{candidate.ranking}
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        <span className="text-2xl font-bold text-primary">{candidate.overall_score}</span>
-                        <span className="text-sm text-muted-foreground">/10</span>
+              {Array.isArray(comparisonResults) && comparisonResults.map((result: any, index: number) => {
+                const originalCandidate = candidates.find(c => c.id === result.id);
+                return (
+                  <Card key={index} className="glass-card hover-lift">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge 
+                          variant={result.rank === 1 ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          Rank #{result.rank}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <span className="text-2xl font-bold text-primary">{result.overall_score}</span>
+                          <span className="text-sm text-muted-foreground">/10</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {candidate.name?.substring(0, 2).toUpperCase() || "??"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                            {(result.name || originalCandidate?.name || "??").substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-sm font-semibold">{result.name || originalCandidate?.name || "Unknown"}</CardTitle>
+                          {originalCandidate?.email && (
+                            <p className="text-xs text-muted-foreground">{originalCandidate.email}</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Match Summary */}
                       <div>
-                        <CardTitle className="text-sm font-semibold">{candidate.name}</CardTitle>
-                        <p className="text-xs text-muted-foreground">{candidate.email}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                          Match Summary
+                        </p>
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {result.match_summary || "No summary available"}
+                        </p>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Match Summary */}
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                        Match Summary
-                      </p>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        {candidate.match_summary || "No summary available"}
-                      </p>
-                    </div>
 
-                    {/* Strengths */}
-                    <div>
-                      <p className="text-xs font-semibold text-success uppercase mb-2 flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        Strengths
-                      </p>
-                      <ul className="space-y-1">
-                        {candidate.strengths?.map((strength: string, i: number) => (
-                          <li key={i} className="text-xs text-foreground flex items-start gap-1">
-                            <span className="text-success mt-0.5">•</span>
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                      {/* Strengths */}
+                      <div>
+                        <p className="text-xs font-semibold text-success uppercase mb-2 flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Strengths
+                        </p>
+                        <ul className="space-y-1">
+                          {result.strengths?.map((strength: string, i: number) => (
+                            <li key={i} className="text-xs text-foreground flex items-start gap-1">
+                              <span className="text-success mt-0.5">•</span>
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                    {/* Weaknesses */}
-                    <div>
-                      <p className="text-xs font-semibold text-destructive uppercase mb-2 flex items-center gap-1">
-                        <TrendingDown className="h-3 w-3" />
-                        Weaknesses
-                      </p>
-                      <ul className="space-y-1">
-                        {candidate.weaknesses?.map((weakness: string, i: number) => (
-                          <li key={i} className="text-xs text-foreground flex items-start gap-1">
-                            <span className="text-destructive mt-0.5">•</span>
-                            <span>{weakness}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                      {/* Weaknesses */}
+                      <div>
+                        <p className="text-xs font-semibold text-destructive uppercase mb-2 flex items-center gap-1">
+                          <TrendingDown className="h-3 w-3" />
+                          Weaknesses
+                        </p>
+                        <ul className="space-y-1">
+                          {result.weaknesses?.map((weakness: string, i: number) => (
+                            <li key={i} className="text-xs text-foreground flex items-start gap-1">
+                              <span className="text-destructive mt-0.5">•</span>
+                              <span>{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                    {/* Recommendation */}
-                    <div className="pt-2 border-t border-border/50">
-                      <Badge 
-                        variant={
-                          candidate.recommendation?.toLowerCase().includes('highly') ? 'default' :
-                          candidate.recommendation?.toLowerCase().includes('not') ? 'destructive' :
-                          'secondary'
-                        }
-                        className="w-full justify-center py-1"
-                      >
-                        {candidate.recommendation || "Pending Review"}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      {/* Recommendation */}
+                      <div className="pt-2 border-t border-border/50">
+                        <Badge 
+                          variant={
+                            result.recommendation?.toLowerCase().includes('highly') ? 'default' :
+                            result.recommendation?.toLowerCase().includes('not') ? 'destructive' :
+                            'secondary'
+                          }
+                          className="w-full justify-center py-1"
+                        >
+                          {result.recommendation || "Pending Review"}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </DialogContent>
