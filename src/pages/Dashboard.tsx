@@ -194,77 +194,35 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Shortlisted Candidates & Recent Activity - 2 columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Shortlisted Candidates */}
-          <Card className="glass-effect border-0 card-shadow-lg">
-            <CardHeader className="border-b border-border/50 pb-4">
-              <CardTitle className="text-xl font-bold">Shortlisted Candidates</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ScrollArea className="h-[400px] pr-4">
-                {shortlistedCandidates.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No shortlisted candidates yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {shortlistedCandidates.map((candidate) => {
-                      const job = jobs.find(j => j.job_id === candidate.job_id);
-                      return (
-                        <div key={candidate.id} className="flex gap-3 items-start group p-3 rounded-lg hover:bg-accent/5 smooth-transition border border-border/20">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                            {candidate.name?.substring(0, 2).toUpperCase() || "NA"}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-foreground">{candidate.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{candidate.email}</p>
-                            <p className="text-xs text-primary mt-1">{job?.job_profile || "Unknown Position"}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge className="bg-success/10 text-success text-xs">Shortlisted</Badge>
-                              <span className="text-xs text-muted-foreground">Rating: {candidate.vote}/10</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="glass-effect border-0 card-shadow-lg">
-            <CardHeader className="border-b border-border/50 pb-4">
-              <CardTitle className="text-xl font-bold">Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ScrollArea className="h-[400px] pr-4">
-                {activityLogs.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Activity className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No recent activity</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {activityLogs.map((log) => (
-                      <div key={log.id} className="flex gap-3 items-start group">
-                        <div className="w-2 h-2 rounded-full bg-primary mt-2 ring-4 ring-primary/20 group-hover:ring-primary/40 smooth-transition"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">{log.action}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{log.details}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{log.timestamp}</p>
-                        </div>
+        {/* Recent Activity */}
+        <Card className="glass-effect border-0 card-shadow-lg">
+          <CardHeader className="border-b border-border/50 pb-4">
+            <CardTitle className="text-xl font-bold">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ScrollArea className="h-[400px] pr-4">
+              {activityLogs.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Activity className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No recent activity</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activityLogs.map((log) => (
+                    <div key={log.id} className="flex gap-3 items-start group">
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2 ring-4 ring-primary/20 group-hover:ring-primary/40 smooth-transition"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{log.action}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{log.details}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{log.timestamp}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

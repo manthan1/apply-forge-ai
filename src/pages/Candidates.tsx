@@ -370,8 +370,6 @@ export default function Candidates() {
                       <TabsTrigger value="all">All</TabsTrigger>
                       <TabsTrigger value="new">New</TabsTrigger>
                       <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
-                      <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                      <TabsTrigger value="interviewed">Interviewed</TabsTrigger>
                     </TabsList>
                   </Tabs>
                   {isJobSpecificView && selectedCandidates.length > 0 && (
