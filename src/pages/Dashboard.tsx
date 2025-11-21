@@ -92,8 +92,9 @@ export default function Dashboard() {
           setShortlistedCount(shortlisted.length);
           setShortlistedCandidates(shortlisted);
           
-          // Generate activity logs
+          // Generate activity logs (sorted by newest first)
           const logs: ActivityLog[] = candidatesData
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
             .slice(0, 10)
             .map((candidate: any, idx: number) => ({
               id: `${idx}`,
