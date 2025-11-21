@@ -13,6 +13,7 @@ export default function CreateJob() {
   const { user } = useAuth();
   const [jobPrompt, setJobPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const [shareLink, setShareLink] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -78,6 +79,52 @@ export default function CreateJob() {
     }
   };
 
+  const handleEnhanceWithAI = async () => {
+    if (!user || !jobPrompt.trim()) {
+      toast.error("Please enter job details first");
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const { data: profile } = await (supabase as any)
+        .from("hr_profiles")
+        .select("company_name")
+        .eq("id", user.id)
+        .single();
+
+      const companyName = profile?.company_name || "Company";
+
+      const response = await fetch(
+        "https://n8n.srv898271.hstgr.cloud/webhook/enhance_jd",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            job_description: jobPrompt,
+            company_name: companyName,
+            hr_user_id: user.id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to enhance job description");
+      }
+
+      const data = await response.json();
+      setJobPrompt(data.enhanced_description || data.job_description || jobPrompt);
+      toast.success("Job description enhanced successfully!");
+    } catch (error: any) {
+      console.error("Error enhancing job description:", error);
+      toast.error(error.message || "Failed to enhance job description");
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareLink);
     setCopied(true);
@@ -116,19 +163,41 @@ export default function CreateJob() {
                 />
               </div>
 
-              <Button type="submit" disabled={loading} className="w-full h-12">
-                {loading ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                    Creating Form...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Application Form
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={enhancing || loading}
+                  onClick={handleEnhanceWithAI}
+                  className="flex-1 h-12"
+                >
+                  {enhancing ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                      Enhancing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Enhance with AI
+                    </>
+                  )}
+                </Button>
+
+                <Button type="submit" disabled={loading || enhancing} className="flex-1 h-12">
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                      Creating Form...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Application Form
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
 
             {shareLink && (
