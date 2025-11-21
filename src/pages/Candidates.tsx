@@ -229,7 +229,11 @@ export default function Candidates() {
       if (!response.ok) throw new Error('Failed to compare candidates');
 
       const data = await response.json();
-      setComparisonResults(data);
+      // Extract rankings from the webhook response structure
+      const rankings = Array.isArray(data) && data[0]?.message?.content?.rankings 
+        ? data[0].message.content.rankings 
+        : data;
+      setComparisonResults(rankings);
       setShowComparison(true);
       toast.success("Candidates compared successfully!");
     } catch (error: any) {
