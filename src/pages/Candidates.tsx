@@ -197,13 +197,29 @@ export default function Candidates() {
       // Get selected candidate details
       const selectedCandidateData = candidates.filter(c => selectedCandidates.includes(c.id));
       
-      // Update status to 'shortlisted' in database
-      const { error: updateError } = await (supabase as any)
+      // Get current job's candidates that are not selected and still in 'new' status
+      const jobId = candidates[0]?.job_id;
+      const nonSelectedNewCandidates = candidates.filter(
+        c => !selectedCandidates.includes(c.id) && (!c.status || c.status === 'new')
+      ).map(c => c.id);
+      
+      // Update selected candidates to 'shortlisted'
+      const { error: shortlistError } = await supabase
         .from("ai_analysed_resume")
         .update({ status: 'shortlisted' })
         .in('id', selectedCandidates);
 
-      if (updateError) throw updateError;
+      if (shortlistError) throw shortlistError;
+
+      // Update non-selected new candidates to 'rejected'
+      if (nonSelectedNewCandidates.length > 0) {
+        const { error: rejectError } = await supabase
+          .from("ai_analysed_resume")
+          .update({ status: 'rejected' })
+          .in('id', nonSelectedNewCandidates);
+
+        if (rejectError) throw rejectError;
+      }
 
       // Send emails to webhook
       const emails = selectedCandidateData.map(c => c.email);
@@ -221,14 +237,17 @@ export default function Candidates() {
 
       if (!response.ok) throw new Error('Failed to send emails');
 
-      toast.success(`Successfully shortlisted ${selectedCandidates.length} candidate(s) and sent emails`);
+      toast.success(
+        `Successfully shortlisted ${selectedCandidates.length} candidate(s)${
+          nonSelectedNewCandidates.length > 0 
+            ? ` and marked ${nonSelectedNewCandidates.length} as rejected` 
+            : ''
+        }`
+      );
       
       // Refresh candidates to show updated status
-      if (isJobSpecificView) {
-        const jobId = candidates[0]?.job_id;
-        if (jobId) {
-          await handleViewJobCandidates(jobId);
-        }
+      if (jobId) {
+        await handleViewJobCandidates(jobId);
       }
       
       setSelectedCandidates([]);
