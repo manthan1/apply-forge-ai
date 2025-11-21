@@ -115,7 +115,8 @@ export default function CreateJob() {
       }
 
       const data = await response.json();
-      setJobPrompt(data.enhanced_description || data.job_description || jobPrompt);
+      const enhancedText = Array.isArray(data) ? data[0]?.enhanced_jd : data.enhanced_jd;
+      setJobPrompt(enhancedText || jobPrompt);
       toast.success("Job description enhanced successfully!");
     } catch (error: any) {
       console.error("Error enhancing job description:", error);
