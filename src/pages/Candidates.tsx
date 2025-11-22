@@ -611,110 +611,169 @@ export default function Candidates() {
 
       {/* Comparison Results Dialog */}
       <Dialog open={showComparison} onOpenChange={setShowComparison}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              <Scale className="h-6 w-6 text-primary" />
-              Candidate Comparison
-            </DialogTitle>
-            <DialogDescription>
-              AI-powered side-by-side comparison of selected candidates
-            </DialogDescription>
+        <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Scale className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-foreground">
+                    Candidate Comparison
+                  </DialogTitle>
+                  <DialogDescription className="text-sm">
+                    AI-powered analysis of {comparisonResults?.length || 0} selected candidates
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
           </DialogHeader>
           
-          {comparisonResults && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-6">
-              {Array.isArray(comparisonResults) && comparisonResults.map((result: any, index: number) => {
+          {comparisonResults && Array.isArray(comparisonResults) && comparisonResults.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              {comparisonResults.map((result: any, index: number) => {
                 const originalCandidate = candidates.find(c => c.id === result.id);
+                const isTopRank = result.rank === 1;
+                const isNotRecommended = result.recommendation?.toLowerCase().includes('not');
+                
                 return (
-                  <Card key={index} className="glass-card hover-lift">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between mb-2">
+                  <Card 
+                    key={index} 
+                    className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                      isTopRank ? 'ring-2 ring-primary/50 shadow-lg' : 'hover:ring-1 hover:ring-border'
+                    }`}
+                  >
+                    {/* Top Rank Badge */}
+                    {isTopRank && (
+                      <div className="absolute top-0 right-0 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-3 py-1 rounded-bl-lg text-xs font-semibold flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        Top Match
+                      </div>
+                    )}
+
+                    <CardHeader className="space-y-4 pb-4">
+                      {/* Header with Rank and Score */}
+                      <div className="flex items-start justify-between">
                         <Badge 
-                          variant={result.rank === 1 ? "default" : "secondary"}
-                          className="text-xs"
+                          variant={isTopRank ? "default" : "secondary"}
+                          className="text-sm px-3 py-1 font-semibold"
                         >
                           Rank #{result.rank}
                         </Badge>
-                        <div className="flex items-center gap-1">
-                          <span className="text-2xl font-bold text-primary">{result.overall_score}</span>
-                          <span className="text-sm text-muted-foreground">/10</span>
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-bold text-primary">{result.overall_score}</span>
+                            <span className="text-sm text-muted-foreground font-medium">/10</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">Overall Score</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+
+                      {/* Candidate Info */}
+                      <div className="flex items-center gap-3 pt-2">
+                        <Avatar className="h-12 w-12 border-2 border-border">
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-base font-bold">
                             {(result.name || originalCandidate?.name || "??").substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <CardTitle className="text-sm font-semibold">{result.name || originalCandidate?.name || "Unknown"}</CardTitle>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base text-foreground truncate">
+                            {result.name || originalCandidate?.name || "Unknown"}
+                          </h3>
                           {originalCandidate?.email && (
-                            <p className="text-xs text-muted-foreground">{originalCandidate.email}</p>
+                            <p className="text-xs text-muted-foreground truncate">{originalCandidate.email}</p>
                           )}
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+
+                    <Separator />
+
+                    <CardContent className="space-y-4 pt-4">
                       {/* Match Summary */}
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                          Match Summary
-                        </p>
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {result.match_summary || "No summary available"}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary"></div>
+                          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            Match Analysis
+                          </h4>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed pl-3 border-l-2 border-border">
+                          {result.match_summary || "No analysis available"}
                         </p>
                       </div>
 
                       {/* Strengths */}
-                      <div>
-                        <p className="text-xs font-semibold text-success uppercase mb-2 flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          Strengths
-                        </p>
-                        <ul className="space-y-1">
-                          {result.strengths?.map((strength: string, i: number) => (
-                            <li key={i} className="text-xs text-foreground flex items-start gap-1">
-                              <span className="text-success mt-0.5">•</span>
-                              <span>{strength}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-success" />
+                          <h4 className="text-xs font-bold text-success uppercase tracking-wider">
+                            Key Strengths
+                          </h4>
+                        </div>
+                        <div className="space-y-1.5 pl-1">
+                          {result.strengths?.length > 0 ? (
+                            result.strengths.map((strength: string, i: number) => (
+                              <div key={i} className="flex items-start gap-2 group">
+                                <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-success flex-shrink-0"></div>
+                                <p className="text-sm text-foreground leading-relaxed">{strength}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No strengths listed</p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Weaknesses */}
-                      <div>
-                        <p className="text-xs font-semibold text-destructive uppercase mb-2 flex items-center gap-1">
-                          <TrendingDown className="h-3 w-3" />
-                          Weaknesses
-                        </p>
-                        <ul className="space-y-1">
-                          {result.weaknesses?.map((weakness: string, i: number) => (
-                            <li key={i} className="text-xs text-foreground flex items-start gap-1">
-                              <span className="text-destructive mt-0.5">•</span>
-                              <span>{weakness}</span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-4 w-4 text-destructive" />
+                          <h4 className="text-xs font-bold text-destructive uppercase tracking-wider">
+                            Areas for Improvement
+                          </h4>
+                        </div>
+                        <div className="space-y-1.5 pl-1">
+                          {result.weaknesses?.length > 0 ? (
+                            result.weaknesses.map((weakness: string, i: number) => (
+                              <div key={i} className="flex items-start gap-2 group">
+                                <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive flex-shrink-0"></div>
+                                <p className="text-sm text-foreground leading-relaxed">{weakness}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">No weaknesses listed</p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Recommendation */}
-                      <div className="pt-2 border-t border-border/50">
-                        <Badge 
-                          variant={
-                            result.recommendation?.toLowerCase().includes('highly') ? 'default' :
-                            result.recommendation?.toLowerCase().includes('not') ? 'destructive' :
-                            'secondary'
-                          }
-                          className="w-full justify-center py-1"
-                        >
-                          {result.recommendation || "Pending Review"}
-                        </Badge>
+                      <div className="pt-3 space-y-2">
+                        <Separator />
+                        <div className="space-y-2 pt-2">
+                          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            Recommendation
+                          </h4>
+                          <div className={`p-3 rounded-lg text-sm leading-relaxed ${
+                            isNotRecommended 
+                              ? 'bg-destructive/10 text-destructive border border-destructive/20' 
+                              : isTopRank
+                              ? 'bg-primary/10 text-primary border border-primary/20'
+                              : 'bg-muted/50 text-foreground border border-border'
+                          }`}>
+                            {result.recommendation || "Pending detailed review"}
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 );
               })}
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">No comparison data available</p>
             </div>
           )}
         </DialogContent>
