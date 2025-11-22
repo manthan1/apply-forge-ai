@@ -64,7 +64,6 @@ export default function Candidates() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isSendingEmails, setIsSendingEmails] = useState(false);
-  const [compareSelection, setCompareSelection] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonResults, setComparisonResults] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
@@ -137,7 +136,6 @@ export default function Candidates() {
     setLoading(true);
     setIsJobSpecificView(true);
     setSelectedCandidates([]); // Clear selection when switching jobs
-    setCompareSelection([]); // Clear comparison selection
     
     try {
       const { data, error } = await (supabase as any)
@@ -170,34 +168,17 @@ export default function Candidates() {
     setSearchJobId("");
     setSearchParams({});
     setSelectedCandidates([]);
-    setCompareSelection([]);
-  };
-
-  const handleToggleCompare = (candidateId: string) => {
-    setCompareSelection(prev => {
-      const newSelection = prev.includes(candidateId)
-        ? prev.filter(id => id !== candidateId)
-        : [...prev, candidateId];
-      
-      // Limit to 5 candidates
-      if (newSelection.length > 5) {
-        toast.error("You can compare up to 5 candidates at once");
-        return prev;
-      }
-      
-      return newSelection;
-    });
   };
 
   const handleCompareCandidates = async () => {
-    if (compareSelection.length < 2 || compareSelection.length > 5) {
+    if (selectedCandidates.length < 2 || selectedCandidates.length > 5) {
       toast.error("Please select 2-5 candidates to compare");
       return;
     }
 
     setIsComparing(true);
     try {
-      const selectedCandidateData = candidates.filter(c => compareSelection.includes(c.id));
+      const selectedCandidateData = candidates.filter(c => selectedCandidates.includes(c.id));
       const job = jobs.find(j => j.job_id === candidates[0]?.job_id);
 
       const response = await fetch('https://n8n.srv898271.hstgr.cloud/webhook/compare_candidates', {
@@ -485,16 +466,39 @@ export default function Candidates() {
                       <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  {isJobSpecificView && selectedCandidates.length > 0 && (
-                    <Button
-                      onClick={handleShortlistAndSendEmails}
-                      disabled={isSendingEmails}
-                      className="gap-2"
-                      size="sm"
-                    >
-                      <Send className="h-4 w-4" />
-                      Shortlist & Send Emails ({selectedCandidates.length})
-                    </Button>
+                  {selectedCandidates.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {isJobSpecificView && (
+                        <Button
+                          onClick={handleShortlistAndSendEmails}
+                          disabled={isSendingEmails}
+                          className="gap-2"
+                          size="sm"
+                        >
+                          <Send className="h-4 w-4" />
+                          Shortlist & Send Emails ({selectedCandidates.length})
+                        </Button>
+                      )}
+                      <Button
+                        onClick={handleCompareCandidates}
+                        disabled={isComparing || selectedCandidates.length < 2 || selectedCandidates.length > 5}
+                        variant="outline"
+                        className="gap-2"
+                        size="sm"
+                      >
+                        {isComparing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Comparing...
+                          </>
+                        ) : (
+                          <>
+                            <Scale className="h-4 w-4" />
+                            Compare ({selectedCandidates.length})
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -504,18 +508,11 @@ export default function Candidates() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30">
-                      {isJobSpecificView && (
-                        <TableHead className="w-[50px]">
-                          <Checkbox
-                            checked={selectedCandidates.length === filteredCandidates.length && filteredCandidates.length > 0}
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </TableHead>
-                      )}
                       <TableHead className="w-[50px]">
-                        <div className="flex items-center gap-1">
-                          <Scale className="h-3 w-3 text-muted-foreground" />
-                        </div>
+                        <Checkbox
+                          checked={selectedCandidates.length === filteredCandidates.length && filteredCandidates.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
                       </TableHead>
                       <TableHead className="font-semibold">CANDIDATE</TableHead>
                       <TableHead className="font-semibold">CONTACT</TableHead>
@@ -528,18 +525,10 @@ export default function Candidates() {
                   <TableBody>
                     {filteredCandidates.map((candidate) => (
                       <TableRow key={candidate.id} className="hover:bg-muted/20">
-                        {isJobSpecificView && (
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedCandidates.includes(candidate.id)}
-                              onCheckedChange={() => handleToggleCandidate(candidate.id)}
-                            />
-                          </TableCell>
-                        )}
                         <TableCell>
                           <Checkbox
-                            checked={compareSelection.includes(candidate.id)}
-                            onCheckedChange={() => handleToggleCompare(candidate.id)}
+                            checked={selectedCandidates.includes(candidate.id)}
+                            onCheckedChange={() => handleToggleCandidate(candidate.id)}
                           />
                         </TableCell>
                         <TableCell>
@@ -619,49 +608,6 @@ export default function Candidates() {
           </Card>
         )}
       </div>
-
-      {/* Floating Action Bar for Comparison */}
-      {compareSelection.length >= 2 && compareSelection.length <= 5 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4">
-          <Card className="glass-card border-primary/20 shadow-2xl">
-            <CardContent className="py-4 px-6">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Scale className="h-5 w-5 text-primary" />
-                  <span className="font-semibold text-foreground">
-                    {compareSelection.length} candidate{compareSelection.length > 1 ? 's' : ''} selected
-                  </span>
-                </div>
-                <Separator orientation="vertical" className="h-6" />
-                <Button
-                  onClick={handleCompareCandidates}
-                  disabled={isComparing}
-                  className="gap-2"
-                >
-                  {isComparing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Comparing...
-                    </>
-                  ) : (
-                    <>
-                      <Scale className="h-4 w-4" />
-                      Compare Candidates
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCompareSelection([])}
-                >
-                  Clear
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Comparison Results Dialog */}
       <Dialog open={showComparison} onOpenChange={setShowComparison}>
