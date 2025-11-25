@@ -212,14 +212,6 @@ export default function Apply() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
       <div className="container mx-auto max-w-3xl">
-        {/* Header Logo */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-lg">L</span>
-          </div>
-          <span className="text-xl font-semibold text-foreground">Lumina</span>
-        </div>
-
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-4 pb-6">
             <div className="flex items-start gap-4">
