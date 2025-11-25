@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
+import { Footer } from "./Footer";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -9,7 +10,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen w-full">
       <AppSidebar />
-      <div className="flex-1 ml-[240px]">
+      <div className="flex-1 ml-[240px] flex flex-col">
         {/* Top Bar */}
         <header className="h-16 glass-effect sticky top-0 z-10 flex items-center justify-end px-8">
           <div className="flex items-center gap-4">
@@ -20,9 +21,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Main Content */}
-        <main className="p-8">
+        <main className="p-8 flex-1">
           {children}
         </main>
+
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );
