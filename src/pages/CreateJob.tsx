@@ -4,14 +4,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Copy, Check } from "lucide-react";
+import { Sparkles, Copy, Check, ArrowRight, ArrowLeft } from "lucide-react";
 
 export default function CreateJob() {
   const { user } = useAuth();
+  const [step, setStep] = useState(1);
   const [jobPrompt, setJobPrompt] = useState("");
+  const [educationRequired, setEducationRequired] = useState("");
+  const [locationType, setLocationType] = useState("");
+  const [expectedSalary, setExpectedSalary] = useState("");
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [shareLink, setShareLink] = useState("");
@@ -19,6 +25,15 @@ export default function CreateJob() {
 
   const generateShortId = () => {
     return Math.random().toString(36).substring(2, 8);
+  };
+
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobPrompt.trim()) {
+      toast.error("Please enter job details");
+      return;
+    }
+    setStep(2);
   };
 
   const handleCreateForm = async (e: React.FormEvent) => {
@@ -46,6 +61,9 @@ export default function CreateJob() {
             job_prompt: jobPrompt,
             hr_user_id: user.id,
             company_name: companyName,
+            education_required: educationRequired,
+            location_type: locationType,
+            expected_salary: expectedSalary,
           }),
         }
       );
@@ -71,6 +89,10 @@ export default function CreateJob() {
       
       toast.success("Job form created successfully!");
       setJobPrompt("");
+      setEducationRequired("");
+      setLocationType("");
+      setExpectedSalary("");
+      setStep(1);
     } catch (error: any) {
       console.error("Error creating job:", error);
       toast.error(error.message || "Failed to create job form");
@@ -151,55 +173,115 @@ export default function CreateJob() {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={handleCreateForm} className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="job-details" className="text-base font-semibold">Job Details</Label>
-                <Textarea
-                  id="job-details"
-                  placeholder="E.g., We're looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and AWS. The role involves leading development of our main product platform..."
-                  value={jobPrompt}
-                  onChange={(e) => setJobPrompt(e.target.value)}
-                  required
-                  className="min-h-[220px] rounded-xl resize-none"
-                />
-              </div>
+            {step === 1 ? (
+              <form onSubmit={handleNext} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="job-details" className="text-base font-semibold">Job Details</Label>
+                  <Textarea
+                    id="job-details"
+                    placeholder="E.g., We're looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and AWS. The role involves leading development of our main product platform..."
+                    value={jobPrompt}
+                    onChange={(e) => setJobPrompt(e.target.value)}
+                    required
+                    className="min-h-[220px] rounded-xl resize-none"
+                  />
+                </div>
 
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={enhancing || loading}
-                  onClick={handleEnhanceWithAI}
-                  className="flex-1 h-12"
-                >
-                  {enhancing ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                      Enhancing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Enhance with AI
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={enhancing}
+                    onClick={handleEnhanceWithAI}
+                    className="flex-1 h-12"
+                  >
+                    {enhancing ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Enhance with AI
+                      </>
+                    )}
+                  </Button>
 
-                <Button type="submit" disabled={loading || enhancing} className="flex-1 h-12">
-                  {loading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                      Creating Form...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Generate Application Form
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+                  <Button type="submit" disabled={enhancing} className="flex-1 h-12">
+                    Next
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateForm} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="education" className="text-base font-semibold">Education Required</Label>
+                  <Input
+                    id="education"
+                    placeholder="E.g., Bachelor's degree in Computer Science or equivalent"
+                    value={educationRequired}
+                    onChange={(e) => setEducationRequired(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="location" className="text-base font-semibold">Location Type</Label>
+                  <Select value={locationType} onValueChange={setLocationType} required>
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder="Select location type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="onsite">Onsite</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="salary" className="text-base font-semibold">
+                    Expected Salary <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
+                  </Label>
+                  <Input
+                    id="salary"
+                    placeholder="E.g., $80,000 - $120,000 per year"
+                    value={expectedSalary}
+                    onChange={(e) => setExpectedSalary(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    className="flex-1 h-12"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+
+                  <Button type="submit" disabled={loading} className="flex-1 h-12">
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                        Creating Form...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Application Form
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
 
             {shareLink && (
               <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">

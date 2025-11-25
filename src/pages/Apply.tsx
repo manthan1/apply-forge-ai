@@ -15,6 +15,9 @@ interface JobListing {
   job_description: string;
   company_name: string;
   status: string;
+  education_required?: string;
+  location_type?: string;
+  expected_salary?: string;
 }
 
 export default function Apply() {
@@ -247,6 +250,30 @@ export default function Apply() {
                 {job.job_description}
               </p>
             </div>
+
+            {/* Job Requirements */}
+            {(job.education_required || job.location_type || job.expected_salary) && (
+              <div className="grid gap-4 md:grid-cols-3">
+                {job.education_required && (
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">EDUCATION</p>
+                    <p className="text-sm font-semibold">{job.education_required}</p>
+                  </div>
+                )}
+                {job.location_type && (
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">LOCATION</p>
+                    <p className="text-sm font-semibold capitalize">{job.location_type}</p>
+                  </div>
+                )}
+                {job.expected_salary && (
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">SALARY</p>
+                    <p className="text-sm font-semibold">{job.expected_salary}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Application Form */}
             <div className="pt-6 border-t border-border/50">

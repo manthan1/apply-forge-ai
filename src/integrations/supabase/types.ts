@@ -222,33 +222,42 @@ export type Database = {
         Row: {
           company_name: string
           created_at: string
+          education_required: string | null
+          expected_salary: string | null
           hr_user_id: string
           id: string
           job_description: string
           job_id: string
           job_profile: string
+          location_type: string | null
           status: string
           updated_at: string
         }
         Insert: {
           company_name: string
           created_at?: string
+          education_required?: string | null
+          expected_salary?: string | null
           hr_user_id: string
           id?: string
           job_description: string
           job_id: string
           job_profile: string
+          location_type?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           company_name?: string
           created_at?: string
+          education_required?: string | null
+          expected_salary?: string | null
           hr_user_id?: string
           id?: string
           job_description?: string
           job_id?: string
           job_profile?: string
+          location_type?: string | null
           status?: string
           updated_at?: string
         }
