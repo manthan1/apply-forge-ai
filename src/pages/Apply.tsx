@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Briefcase, Upload, CheckCircle2, AlertCircle, Building2, MapPin } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { BrandHeader } from "@/components/BrandHeader";
 
 interface JobListing {
   id: string;
@@ -139,10 +140,13 @@ export default function Apply() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading job details...</p>
+      <div className="flex min-h-screen flex-col">
+        <BrandHeader />
+        <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+          <div className="text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading job details...</p>
+          </div>
         </div>
       </div>
     );
@@ -150,8 +154,10 @@ export default function Apply() {
 
   if (!job) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
+      <div className="flex min-h-screen flex-col">
+        <BrandHeader />
+        <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+          <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="pt-12 pb-8 text-center">
             <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="h-8 w-8 text-destructive" />
@@ -162,14 +168,17 @@ export default function Apply() {
             </p>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   if (job.status === "Closed") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
+      <div className="flex min-h-screen flex-col">
+        <BrandHeader />
+        <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+          <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="pt-12 pb-8 text-center">
             <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="h-8 w-8 text-warning" />
@@ -180,14 +189,17 @@ export default function Apply() {
             </p>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
+      <div className="flex min-h-screen flex-col">
+        <BrandHeader />
+        <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+          <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="pt-12 pb-8 text-center">
             <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-8 w-8 text-success" />
@@ -206,12 +218,15 @@ export default function Apply() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
+    <div className="min-h-screen flex flex-col">
+      <BrandHeader />
+      <div className="flex-1 bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
       <div className="container mx-auto max-w-3xl">
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-4 pb-6">
@@ -371,6 +386,7 @@ export default function Apply() {
         <p className="text-center text-sm text-muted-foreground mt-8">
           By submitting this application, you agree to our processing of your data for recruitment purposes.
         </p>
+      </div>
       </div>
       <Footer />
     </div>

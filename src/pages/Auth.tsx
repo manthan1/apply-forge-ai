@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Briefcase, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { BrandHeader } from "@/components/BrandHeader";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -82,14 +83,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center shadow-2xl">
-            <Briefcase className="h-8 w-8 text-white" />
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col">
+      <BrandHeader />
+      <div className="flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md">
 
         <Card className="glass-effect border-0 card-shadow-lg">
           <CardHeader className="text-center space-y-3 pb-6">
@@ -226,8 +223,9 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
-        <Footer />
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }
