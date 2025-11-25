@@ -171,8 +171,8 @@ export default function Candidates() {
   };
 
   const handleCompareCandidates = async () => {
-    if (selectedCandidates.length < 2 || selectedCandidates.length > 5) {
-      toast.error("Please select 2-5 candidates to compare");
+    if (selectedCandidates.length < 2 || selectedCandidates.length > 10) {
+      toast.error("Please select 2-10 candidates to compare");
       return;
     }
 
@@ -481,7 +481,7 @@ export default function Candidates() {
                       )}
                       <Button
                         onClick={handleCompareCandidates}
-                        disabled={isComparing || selectedCandidates.length < 2 || selectedCandidates.length > 5}
+                        disabled={isComparing || selectedCandidates.length < 2 || selectedCandidates.length > 10}
                         variant="outline"
                         className="gap-2"
                         size="sm"
