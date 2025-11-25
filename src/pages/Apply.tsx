@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Briefcase, Upload, CheckCircle2, AlertCircle, Building2, MapPin } from "lucide-react";
+import { Footer } from "@/components/Footer";
 
 interface JobListing {
   id: string;
@@ -371,6 +372,7 @@ export default function Apply() {
           By submitting this application, you agree to our processing of your data for recruitment purposes.
         </p>
       </div>
+      <Footer />
     </div>
   );
 }

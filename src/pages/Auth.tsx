@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Briefcase, Building2 } from "lucide-react";
+import { Footer } from "@/components/Footer";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -225,6 +226,7 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
+        <Footer />
       </div>
     </div>
   );
