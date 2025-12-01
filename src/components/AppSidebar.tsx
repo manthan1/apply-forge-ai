@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Briefcase, Users, BarChart3, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, Briefcase, Users, BarChart3, Plus, Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -74,9 +75,23 @@ export function AppSidebar() {
             <p className="text-sm font-semibold text-foreground truncate">{user?.email?.split("@")[0] || "HR User"}</p>
             <p className="text-xs text-muted-foreground truncate">HR Manager</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-accent" onClick={signOut} title="Logout">
-            <Settings className="h-4 w-4" />
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-accent" title="Settings">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="end" side="top">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                onClick={signOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </aside>
