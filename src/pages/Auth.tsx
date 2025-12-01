@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
+import { Building2, Eye, EyeOff } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { BrandHeader } from "@/components/BrandHeader";
 
@@ -16,6 +16,8 @@ export default function Auth() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   
   const [signUpData, setSignUpData] = useState({
     email: "",
@@ -129,17 +131,30 @@ export default function Auth() {
                     <Label htmlFor="signin-password" className="font-semibold">
                       Password
                     </Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={signInData.password}
-                      onChange={(e) =>
-                        setSignInData({ ...signInData, password: e.target.value })
-                      }
-                      required
-                      className="h-11 rounded-xl"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signin-password"
+                        type={showSignInPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={signInData.password}
+                        onChange={(e) =>
+                          setSignInData({ ...signInData, password: e.target.value })
+                        }
+                        required
+                        className="h-11 rounded-xl pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showSignInPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-11 mt-2">
                     {loading ? (
@@ -195,18 +210,31 @@ export default function Auth() {
                     <Label htmlFor="signup-password" className="font-semibold">
                       Password
                     </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={signUpData.password}
-                      onChange={(e) =>
-                        setSignUpData({ ...signUpData, password: e.target.value })
-                      }
-                      required
-                      minLength={6}
-                      className="h-11 rounded-xl"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showSignUpPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={signUpData.password}
+                        onChange={(e) =>
+                          setSignUpData({ ...signUpData, password: e.target.value })
+                        }
+                        required
+                        minLength={6}
+                        className="h-11 rounded-xl pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showSignUpPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full h-11 mt-2">
                     {loading ? (
