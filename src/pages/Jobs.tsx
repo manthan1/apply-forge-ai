@@ -67,8 +67,9 @@ export default function Jobs () {
         setSelectedJobForResumes(job);
         setLoadingCandidates(true);
         try {
+            // Fetch from applicants table which has the cv_url
             const {data, error} = await (supabase as any)
-                .from("ai_analysed_resume")
+                .from("applicants")
                 .select("id, name, email, cv_url, job_id")
                 .eq("job_id", job.job_id);
 
