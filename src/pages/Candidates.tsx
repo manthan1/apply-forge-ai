@@ -108,11 +108,21 @@ export default function Candidates() {
 
         if (candidatesError) throw candidatesError;
 
-        // Map candidates with job info
+        // Fetch applicants to get cv_url
+        const { data: applicantsData, error: applicantsError } = await (supabase as any)
+          .from("applicants")
+          .select("email, cv_url, job_id")
+          .in("job_id", jobIds);
+
+        if (applicantsError) throw applicantsError;
+
+        // Map candidates with job info and cv_url from applicants
         const candidatesWithJob = (candidatesData || []).map((c: AnalyzedResume) => {
           const job = (jobsData || []).find((j: JobListing) => j.job_id === c.job_id);
+          const applicant = (applicantsData || []).find((a: any) => a.email === c.email && a.job_id === c.job_id);
           return {
             ...c,
+            cv_url: applicant?.cv_url || c.cv_url,
             job_profile: job?.job_profile || "Unknown Role",
             company_name: job?.company_name || "Unknown Company"
           };
@@ -183,7 +193,24 @@ export default function Candidates() {
 
       if (error) throw error;
 
-      setCandidates(data || []);
+      // Fetch applicants to get cv_url
+      const { data: applicantsData, error: applicantsError } = await (supabase as any)
+        .from("applicants")
+        .select("email, cv_url, job_id")
+        .eq("job_id", jobId);
+
+      if (applicantsError) throw applicantsError;
+
+      // Map candidates with cv_url from applicants
+      const candidatesWithCv = (data || []).map((c: AnalyzedResume) => {
+        const applicant = (applicantsData || []).find((a: any) => a.email === c.email && a.job_id === c.job_id);
+        return {
+          ...c,
+          cv_url: applicant?.cv_url || c.cv_url
+        };
+      });
+
+      setCandidates(candidatesWithCv);
       
       const job = jobs.find(j => j.job_id === jobId);
       if (job) {
