@@ -29,6 +29,20 @@ interface Candidate {
     job_id: string;
 }
 
+// Helper function to download file without being blocked by ad blockers
+const downloadFile = (url: string, filename?: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    if (filename) {
+        link.download = filename;
+    }
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 export default function Jobs () {
     const {user} = useAuth();
     const [jobs, setJobs] = useState<JobListing[]>([]);
@@ -210,7 +224,7 @@ export default function Jobs () {
                                                 size="sm"
                                                 variant="outline"
                                                 className="gap-1 ml-2 flex-shrink-0"
-                                                onClick={() => window.open(candidate.cv_url, "_blank")}
+                                                onClick={() => downloadFile(candidate.cv_url, `${candidate.name || 'resume'}.pdf`)}
                                             >
                                                 <Download className="h-3 w-3" />
                                                 <span className="hidden sm:inline">Download</span>
