@@ -54,6 +54,20 @@ interface CandidateWithJob extends AnalyzedResume {
   company_name?: string;
 }
 
+// Helper function to download file without being blocked by ad blockers
+const downloadFile = (url: string, filename?: string) => {
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  if (filename) {
+    link.download = filename;
+  }
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 export default function Candidates() {
   const { user, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -665,8 +679,9 @@ export default function Candidates() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => window.open(candidate.cv_url, "_blank")}
+                                onClick={() => downloadFile(candidate.cv_url, `${candidate.name || 'resume'}.pdf`)}
                                 className="px-2"
+                                title="Download Resume"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
