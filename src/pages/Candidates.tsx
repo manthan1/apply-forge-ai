@@ -49,14 +49,20 @@ interface JobListing {
   created_at: string;
 }
 
+interface CandidateWithJob extends AnalyzedResume {
+  job_profile?: string;
+  company_name?: string;
+}
+
 export default function Candidates() {
   const { user, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchJobId, setSearchJobId] = useState("");
-  const [candidates, setCandidates] = useState<AnalyzedResume[]>([]);
+  const [candidates, setCandidates] = useState<CandidateWithJob[]>([]);
   const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [allCandidatesLoaded, setAllCandidatesLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState<AnalyzedResume | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<CandidateWithJob | null>(null);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [isJobSpecificView, setIsJobSpecificView] = useState(false);
   const [currentJobProfile, setCurrentJobProfile] = useState("");
@@ -70,9 +76,58 @@ export default function Candidates() {
 
   useEffect(() => {
     if (user?.id) {
-      fetchJobs();
+      fetchJobsAndCandidates();
     }
   }, [user?.id]);
+
+  const fetchJobsAndCandidates = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    
+    try {
+      // Fetch jobs first
+      const { data: jobsData, error: jobsError } = await (supabase as any)
+        .from("job_listings")
+        .select("*")
+        .eq("hr_user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Get all job_ids for this user
+      const jobIds = (jobsData || []).map((j: JobListing) => j.job_id);
+      
+      if (jobIds.length > 0) {
+        // Fetch all candidates for these jobs
+        const { data: candidatesData, error: candidatesError } = await (supabase as any)
+          .from("ai_analysed_resume")
+          .select("*")
+          .in("job_id", jobIds)
+          .order("created_at", { ascending: false });
+
+        if (candidatesError) throw candidatesError;
+
+        // Map candidates with job info
+        const candidatesWithJob = (candidatesData || []).map((c: AnalyzedResume) => {
+          const job = (jobsData || []).find((j: JobListing) => j.job_id === c.job_id);
+          return {
+            ...c,
+            job_profile: job?.job_profile || "Unknown Role",
+            company_name: job?.company_name || "Unknown Company"
+          };
+        });
+
+        setCandidates(candidatesWithJob);
+        setAllCandidatesLoaded(true);
+      }
+    } catch (error: any) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle jobId from URL query params
   useEffect(() => {
@@ -82,23 +137,6 @@ export default function Candidates() {
     }
   }, [searchParams, jobs]);
 
-  const fetchJobs = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await (supabase as any)
-        .from("job_listings")
-        .select("*")
-        .eq("hr_user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setJobs(data || []);
-    } catch (error: any) {
-      console.error("Error fetching jobs:", error);
-      toast.error("Failed to load jobs");
-    }
-  };
 
   const handleSearch = async () => {
     if (!searchJobId.trim()) {
@@ -515,10 +553,11 @@ export default function Candidates() {
                         />
                       </TableHead>
                       <TableHead className="font-semibold">CANDIDATE</TableHead>
-                      <TableHead className="font-semibold">CONTACT</TableHead>
+                      {!isJobSpecificView && <TableHead className="font-semibold hidden md:table-cell">APPLIED FOR</TableHead>}
+                      <TableHead className="font-semibold hidden sm:table-cell">CONTACT</TableHead>
                       <TableHead className="font-semibold">AI RATING</TableHead>
-                      <TableHead className="font-semibold">ROLE MATCH</TableHead>
-                      <TableHead className="font-semibold">STATUS</TableHead>
+                      <TableHead className="font-semibold hidden lg:table-cell">ROLE MATCH</TableHead>
+                      <TableHead className="font-semibold hidden md:table-cell">STATUS</TableHead>
                       <TableHead className="font-semibold">ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -532,58 +571,75 @@ export default function Candidates() {
                           />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarFallback className="bg-primary/10 text-primary">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
                                 {candidate.name?.substring(0, 2).toUpperCase() || "??"}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <div className="font-medium text-foreground">{candidate.name || "Unknown"}</div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {candidate.city || "N/A"}
+                            <div className="min-w-0">
+                              <div className="font-medium text-foreground text-sm sm:text-base truncate">{candidate.name || "Unknown"}</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{candidate.city || "N/A"}</span>
                               </div>
+                              {/* Show job role on mobile when not in job-specific view */}
+                              {!isJobSpecificView && (
+                                <div className="text-xs text-primary font-medium mt-0.5 md:hidden truncate">
+                                  {candidate.job_profile}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground">{candidate.email || "N/A"}</span>
+                        {!isJobSpecificView && (
+                          <TableCell className="hidden md:table-cell">
+                            <div className="space-y-1">
+                              <div className="font-medium text-foreground text-sm">{candidate.job_profile}</div>
+                              <div className="text-xs text-muted-foreground">{candidate.company_name}</div>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="h-3 w-3 text-muted-foreground" />
+                          </TableCell>
+                        )}
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs sm:text-sm">
+                              <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground truncate max-w-[120px] lg:max-w-none">{candidate.email || "N/A"}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm">
+                              <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                               <span className="text-muted-foreground">{candidate.phone || "N/A"}</span>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center">
-                            <span className="text-lg font-semibold text-foreground">{candidate.vote || "N/A"}</span>
+                            <span className="text-base sm:text-lg font-semibold text-foreground">{candidate.vote || "N/A"}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <RoleMatchProgress percentage={(parseFloat(candidate.vote) || 0) * 10} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <StatusBadge status={candidate.status || "new"} />
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1 sm:gap-2">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => setSelectedCandidate(candidate)}
+                              className="text-xs sm:text-sm px-2 sm:px-3"
                             >
-                              View Details
+                              <span className="hidden sm:inline">View Details</span>
+                              <span className="sm:hidden">View</span>
                             </Button>
                             {candidate.cv_url && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => window.open(candidate.cv_url, "_blank")}
+                                className="px-2"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -781,57 +837,68 @@ export default function Candidates() {
 
       {/* Candidate Detail Sheet */}
       <Sheet open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-4 sm:p-6">
           {selectedCandidate && (
             <>
-              <SheetHeader>
+              <SheetHeader className="pb-4">
                 <SheetTitle className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                    <AvatarFallback className="bg-primary/10 text-primary text-base sm:text-lg">
                       {selectedCandidate.name?.substring(0, 2).toUpperCase() || "??"}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <div>{selectedCandidate.name || "Unknown Candidate"}</div>
-                    <SheetDescription className="flex items-center gap-2 mt-1">
-                      <MapPin className="h-3 w-3" />
-                      {selectedCandidate.city || "Location not specified"}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-lg sm:text-xl truncate">{selectedCandidate.name || "Unknown Candidate"}</div>
+                    <SheetDescription className="flex items-center gap-2 mt-1 text-xs sm:text-sm">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{selectedCandidate.city || "Location not specified"}</span>
                     </SheetDescription>
                   </div>
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="mt-6 space-y-6">
+              <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+                {/* Applied For - Job Role */}
+                <div className="p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Applied For</p>
+                  <p className="font-semibold text-foreground text-sm sm:text-base">{selectedCandidate.job_profile || "Unknown Role"}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{selectedCandidate.company_name || ""}</p>
+                </div>
+
                 {/* Status and Match */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-muted/30 rounded-lg">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Application Status</p>
-                    <StatusBadge status={selectedCandidate.vote === "yes" ? "shortlisted" : selectedCandidate.vote === "no" ? "rejected" : "new"} />
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Application Status</p>
+                    <StatusBadge status={selectedCandidate.status || "new"} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">AI Rating</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">AI Rating</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground">{selectedCandidate.vote || "N/A"}</span>
-                      <span className="text-sm text-muted-foreground">/10</span>
+                      <span className="text-xl sm:text-2xl font-bold text-foreground">{selectedCandidate.vote || "N/A"}</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">/10</span>
                     </div>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm text-muted-foreground mb-2">Role Match</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">Role Match</p>
                     <RoleMatchProgress percentage={(parseFloat(selectedCandidate.vote) || 0) * 10} />
                   </div>
                 </div>
 
                 {/* Contact Information */}
-                <div>
-                  <h3 className="font-semibold mb-3 text-foreground">Contact Information</h3>
+                <div className="p-3 sm:p-4 bg-muted/20 rounded-lg">
+                  <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base">Contact Information</h3>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-foreground">{selectedCandidate.email || "Not provided"}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-foreground break-all">{selectedCandidate.email || "Not provided"}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span className="text-foreground">{selectedCandidate.phone || "Not provided"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-foreground">{selectedCandidate.city || "Not provided"}</span>
                     </div>
                   </div>
                 </div>
@@ -840,58 +907,93 @@ export default function Candidates() {
 
                 {/* AI Summary */}
                 <div>
-                  <h3 className="font-semibold mb-3 text-foreground">AI Summary</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {selectedCandidate.summarize || "No summary available"}
-                  </p>
+                  <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+                    AI Summary
+                  </h3>
+                  <div className="p-3 bg-muted/20 rounded-lg">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      {selectedCandidate.summarize || "No summary available"}
+                    </p>
+                  </div>
                 </div>
+
+                {/* AI Consideration */}
+                {selectedCandidate.consideration && (
+                  <div>
+                    <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-success"></div>
+                      AI Recommendation
+                    </h3>
+                    <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+                      <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                        {selectedCandidate.consideration}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <Separator />
 
                 {/* Skills */}
                 <div>
-                  <h3 className="font-semibold mb-3 text-foreground">Skills</h3>
-                  <ScrollArea className="h-24">
-                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {selectedCandidate.skills || "No skills listed"}
-                    </p>
-                  </ScrollArea>
+                  <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                    Skills
+                  </h3>
+                  <div className="p-3 bg-muted/20 rounded-lg">
+                    <ScrollArea className="max-h-24">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {selectedCandidate.skills || "No skills listed"}
+                      </p>
+                    </ScrollArea>
+                  </div>
                 </div>
 
                 <Separator />
 
                 {/* Education */}
                 <div>
-                  <h3 className="font-semibold mb-3 text-foreground">Education</h3>
-                  <ScrollArea className="h-24">
-                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {selectedCandidate.educational_details || "No education details provided"}
-                    </p>
-                  </ScrollArea>
+                  <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                    Education
+                  </h3>
+                  <div className="p-3 bg-muted/20 rounded-lg">
+                    <ScrollArea className="max-h-24">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {selectedCandidate.educational_details || "No education details provided"}
+                      </p>
+                    </ScrollArea>
+                  </div>
                 </div>
 
                 <Separator />
 
                 {/* Work Experience */}
                 <div>
-                  <h3 className="font-semibold mb-3 text-foreground">Work Experience</h3>
-                  <ScrollArea className="h-32">
-                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {selectedCandidate.job_history || "No work history provided"}
-                    </p>
-                  </ScrollArea>
+                  <h3 className="font-semibold mb-3 text-foreground text-sm sm:text-base flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                    Work Experience
+                  </h3>
+                  <div className="p-3 bg-muted/20 rounded-lg">
+                    <ScrollArea className="max-h-32">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {selectedCandidate.job_history || "No work history provided"}
+                      </p>
+                    </ScrollArea>
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
-                  <Button className="flex-1 gap-2" onClick={() => window.location.href = `mailto:${selectedCandidate.email}`}>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
+                  <Button className="flex-1 gap-2 text-sm" onClick={() => window.location.href = `mailto:${selectedCandidate.email}`}>
                     <Mail className="h-4 w-4" />
                     Send Email
                   </Button>
                   {selectedCandidate.cv_url && (
                     <Button
                       variant="outline"
-                      className="flex-1 gap-2"
+                      className="flex-1 gap-2 text-sm"
                       onClick={() => window.open(selectedCandidate.cv_url, "_blank")}
                     >
                       <Download className="h-4 w-4" />
