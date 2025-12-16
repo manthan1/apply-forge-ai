@@ -267,7 +267,6 @@ export default function CreateJob() {
                     placeholder="E.g., Prioritize candidates with 3+ years React experience, strong communication skills, and previous startup experience. Give higher scores to those with AWS certifications..."
                     value={rankingCriteria}
                     onChange={(e) => setRankingCriteria(e.target.value)}
-                    required
                     className="min-h-[120px] rounded-xl resize-none"
                   />
                   <p className="text-xs text-muted-foreground">
