@@ -122,21 +122,41 @@ export default function Candidates() {
 
         if (candidatesError) throw candidatesError;
 
-        // Fetch applicants to get cv_url
+        // Fetch applicants to get cv_url with created_at for proper matching
         const { data: applicantsData, error: applicantsError } = await (supabase as any)
           .from("applicants")
-          .select("email, cv_url, job_id")
+          .select("email, cv_url, job_id, name, created_at")
           .in("job_id", jobIds);
 
         if (applicantsError) throw applicantsError;
 
         // Map candidates with job info and cv_url from applicants
+        // Match by finding the applicant with closest created_at timestamp
         const candidatesWithJob = (candidatesData || []).map((c: AnalyzedResume) => {
           const job = (jobsData || []).find((j: JobListing) => j.job_id === c.job_id);
-          const applicant = (applicantsData || []).find((a: any) => a.email === c.email && a.job_id === c.job_id);
+          
+          // Filter applicants with same job_id and email
+          const matchingApplicants = (applicantsData || []).filter(
+            (a: any) => a.email === c.email && a.job_id === c.job_id
+          );
+          
+          // Find the applicant with closest created_at to the candidate's created_at
+          let closestApplicant = null;
+          let minTimeDiff = Infinity;
+          const candidateTime = new Date(c.created_at).getTime();
+          
+          for (const applicant of matchingApplicants) {
+            const applicantTime = new Date(applicant.created_at).getTime();
+            const timeDiff = Math.abs(candidateTime - applicantTime);
+            if (timeDiff < minTimeDiff) {
+              minTimeDiff = timeDiff;
+              closestApplicant = applicant;
+            }
+          }
+          
           return {
             ...c,
-            cv_url: applicant?.cv_url || c.cv_url,
+            cv_url: closestApplicant?.cv_url || c.cv_url,
             job_profile: job?.job_profile || "Unknown Role",
             company_name: job?.company_name || "Unknown Company"
           };
@@ -207,20 +227,38 @@ export default function Candidates() {
 
       if (error) throw error;
 
-      // Fetch applicants to get cv_url
+      // Fetch applicants to get cv_url with created_at for proper matching
       const { data: applicantsData, error: applicantsError } = await (supabase as any)
         .from("applicants")
-        .select("email, cv_url, job_id")
+        .select("email, cv_url, job_id, name, created_at")
         .eq("job_id", jobId);
 
       if (applicantsError) throw applicantsError;
 
-      // Map candidates with cv_url from applicants
+      // Map candidates with cv_url from applicants using timestamp matching
       const candidatesWithCv = (data || []).map((c: AnalyzedResume) => {
-        const applicant = (applicantsData || []).find((a: any) => a.email === c.email && a.job_id === c.job_id);
+        // Filter applicants with same job_id and email
+        const matchingApplicants = (applicantsData || []).filter(
+          (a: any) => a.email === c.email && a.job_id === c.job_id
+        );
+        
+        // Find the applicant with closest created_at to the candidate's created_at
+        let closestApplicant = null;
+        let minTimeDiff = Infinity;
+        const candidateTime = new Date(c.created_at).getTime();
+        
+        for (const applicant of matchingApplicants) {
+          const applicantTime = new Date(applicant.created_at).getTime();
+          const timeDiff = Math.abs(candidateTime - applicantTime);
+          if (timeDiff < minTimeDiff) {
+            minTimeDiff = timeDiff;
+            closestApplicant = applicant;
+          }
+        }
+        
         return {
           ...c,
-          cv_url: applicant?.cv_url || c.cv_url
+          cv_url: closestApplicant?.cv_url || c.cv_url
         };
       });
 
