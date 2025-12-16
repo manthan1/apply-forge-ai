@@ -18,6 +18,7 @@ export default function CreateJob() {
   const [educationRequired, setEducationRequired] = useState("");
   const [locationType, setLocationType] = useState("");
   const [expectedSalary, setExpectedSalary] = useState("");
+  const [rankingCriteria, setRankingCriteria] = useState("");
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [shareLink, setShareLink] = useState("");
@@ -64,6 +65,7 @@ export default function CreateJob() {
             education_required: educationRequired,
             location_type: locationType,
             expected_salary: expectedSalary,
+            ranking_criteria: rankingCriteria,
           }),
         }
       );
@@ -92,6 +94,7 @@ export default function CreateJob() {
       setEducationRequired("");
       setLocationType("");
       setExpectedSalary("");
+      setRankingCriteria("");
       setStep(1);
     } catch (error: any) {
       console.error("Error creating job:", error);
@@ -253,6 +256,23 @@ export default function CreateJob() {
                     onChange={(e) => setExpectedSalary(e.target.value)}
                     className="h-11 rounded-xl"
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="ranking-criteria" className="text-base font-semibold">
+                    Resume Ranking Criteria
+                  </Label>
+                  <Textarea
+                    id="ranking-criteria"
+                    placeholder="E.g., Prioritize candidates with 3+ years React experience, strong communication skills, and previous startup experience. Give higher scores to those with AWS certifications..."
+                    value={rankingCriteria}
+                    onChange={(e) => setRankingCriteria(e.target.value)}
+                    required
+                    className="min-h-[120px] rounded-xl resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Describe how you want the AI to rank and evaluate resumes for this position
+                  </p>
                 </div>
 
                 <div className="flex gap-3">

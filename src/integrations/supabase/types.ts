@@ -230,6 +230,7 @@ export type Database = {
           job_id: string
           job_profile: string
           location_type: string | null
+          ranking_criteria: string | null
           status: string
           updated_at: string
         }
@@ -244,6 +245,7 @@ export type Database = {
           job_id: string
           job_profile: string
           location_type?: string | null
+          ranking_criteria?: string | null
           status?: string
           updated_at?: string
         }
@@ -258,6 +260,7 @@ export type Database = {
           job_id?: string
           job_profile?: string
           location_type?: string | null
+          ranking_criteria?: string | null
           status?: string
           updated_at?: string
         }
