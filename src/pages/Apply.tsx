@@ -20,6 +20,7 @@ interface JobListing {
   education_required?: string;
   location_type?: string;
   expected_salary?: string;
+  ranking_criteria?: string;
 }
 
 export default function Apply() {
@@ -121,6 +122,8 @@ export default function Apply() {
       formDataToSend.append("job_id", job.job_id);
       formDataToSend.append("company_name", job.company_name);
       formDataToSend.append("job_profile", job.job_profile);
+      formDataToSend.append("job_description", job.job_description);
+      formDataToSend.append("ranking_criteria", job.ranking_criteria || "");
       formDataToSend.append("cv", formData.cvFile);
 
       await fetch("https://n8n.srv898271.hstgr.cloud/webhook/HR_resume_analyzer", {
