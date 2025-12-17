@@ -219,27 +219,37 @@ export default function Candidates() {
     setIsJobSpecificView(true);
     setSelectedCandidates([]); // Clear selection when switching jobs
     
+    // Find the job first to set context
+    const job = jobs.find(j => j.job_id === jobId);
+    if (job) {
+      setCurrentJobProfile(job.job_profile);
+      setCurrentCompanyName(job.company_name);
+    }
+    
     try {
+      // Fetch only candidates for this specific job
       const { data, error } = await (supabase as any)
         .from("ai_analysed_resume")
         .select("*")
-        .eq("job_id", jobId);
+        .eq("job_id", jobId)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Fetch applicants to get cv_url with created_at for proper matching
+      // Fetch only applicants for this specific job to get cv_url
       const { data: applicantsData, error: applicantsError } = await (supabase as any)
         .from("applicants")
-        .select("email, cv_url, job_id, name, created_at")
+        .select("id, email, cv_url, job_id, name, created_at")
         .eq("job_id", jobId);
 
       if (applicantsError) throw applicantsError;
 
       // Map candidates with cv_url from applicants using timestamp matching
+      // Each candidate gets matched to their specific applicant record
       const candidatesWithCv = (data || []).map((c: AnalyzedResume) => {
-        // Filter applicants with same job_id and email
+        // Filter applicants with same email for this job
         const matchingApplicants = (applicantsData || []).filter(
-          (a: any) => a.email === c.email && a.job_id === c.job_id
+          (a: any) => a.email === c.email
         );
         
         // Find the applicant with closest created_at to the candidate's created_at
@@ -258,17 +268,13 @@ export default function Candidates() {
         
         return {
           ...c,
-          cv_url: closestApplicant?.cv_url || c.cv_url
+          cv_url: closestApplicant?.cv_url || c.cv_url,
+          job_profile: job?.job_profile || "Unknown Role",
+          company_name: job?.company_name || "Unknown Company"
         };
       });
 
       setCandidates(candidatesWithCv);
-      
-      const job = jobs.find(j => j.job_id === jobId);
-      if (job) {
-        setCurrentJobProfile(job.job_profile);
-        setCurrentCompanyName(job.company_name);
-      }
     } catch (error: any) {
       console.error("Error fetching candidates:", error);
       toast.error("Failed to load candidates");
