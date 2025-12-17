@@ -283,14 +283,15 @@ export default function Candidates() {
     }
   };
 
-  const handleViewAllCandidates = () => {
-    setCandidates([]);
+  const handleViewAllCandidates = async () => {
     setIsJobSpecificView(false);
     setCurrentJobProfile("");
     setCurrentCompanyName("");
     setSearchJobId("");
     setSearchParams({});
     setSelectedCandidates([]);
+    // Reload all candidates from all jobs
+    await fetchJobsAndCandidates();
   };
 
   const handleCompareCandidates = async () => {
@@ -544,39 +545,8 @@ export default function Candidates() {
           </CardContent>
         </Card>
 
-        {/* Candidates by Job */}
-        {!isJobSpecificView && candidates.length === 0 && (
-          <div className="grid gap-4">
-            {jobs.map((job) => (
-              <Card key={job.id} className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-lg text-foreground">{job.job_profile}</h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{job.company_name}</span>
-                        <span>•</span>
-                        <span>Job ID: {job.job_id}</span>
-                        <Badge variant={job.status === "Active" ? "default" : "secondary"}>
-                          {job.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleViewJobCandidates(job.job_id)}
-                      variant="outline"
-                    >
-                      View Candidates
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
         {/* Candidates Table */}
-        {candidates.length > 0 && (
+        {(candidates.length > 0 || loading) && (
           <Card className="border-border/50">
             <CardHeader className="border-b border-border/50">
               <div className="flex items-center justify-between">
@@ -742,10 +712,16 @@ export default function Candidates() {
         )}
 
         {/* Empty State */}
-        {!loading && candidates.length === 0 && jobs.length === 0 && (
+        {!loading && candidates.length === 0 && (
           <Card className="border-border/50">
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No jobs found. Create your first job to start receiving applications.</p>
+              <p className="text-muted-foreground">
+                {jobs.length === 0 
+                  ? "No jobs found. Create your first job to start receiving applications."
+                  : isJobSpecificView 
+                    ? "No candidates have applied for this job yet."
+                    : "No candidates found across all jobs."}
+              </p>
             </CardContent>
           </Card>
         )}
