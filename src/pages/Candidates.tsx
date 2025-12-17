@@ -90,9 +90,39 @@ export default function Candidates() {
 
   useEffect(() => {
     if (user?.id) {
-      fetchJobsAndCandidates();
+      const jobId = searchParams.get("jobId");
+      if (jobId) {
+        // If coming from Jobs page with a specific jobId, only load that job's candidates
+        fetchJobsOnly().then((jobsData) => {
+          if (jobsData && jobsData.length > 0) {
+            handleViewJobCandidates(jobId, jobsData);
+          }
+        });
+      } else {
+        // Otherwise load all candidates
+        fetchJobsAndCandidates();
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, searchParams]);
+
+  const fetchJobsOnly = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: jobsData, error: jobsError } = await (supabase as any)
+        .from("job_listings")
+        .select("*")
+        .eq("hr_user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+      return jobsData;
+    } catch (error: any) {
+      console.error("Error fetching jobs:", error);
+      toast.error("Failed to load jobs");
+      return [];
+    }
+  };
 
   const fetchJobsAndCandidates = async () => {
     if (!user?.id) return;
@@ -173,14 +203,6 @@ export default function Candidates() {
     }
   };
 
-  // Handle jobId from URL query params
-  useEffect(() => {
-    const jobId = searchParams.get("jobId");
-    if (jobId && jobs.length > 0) {
-      handleViewJobCandidates(jobId);
-    }
-  }, [searchParams, jobs]);
-
 
   const handleSearch = async () => {
     if (!searchJobId.trim()) {
@@ -214,13 +236,14 @@ export default function Candidates() {
     }
   };
 
-  const handleViewJobCandidates = async (jobId: string) => {
+  const handleViewJobCandidates = async (jobId: string, jobsData?: JobListing[]) => {
     setLoading(true);
     setIsJobSpecificView(true);
     setSelectedCandidates([]); // Clear selection when switching jobs
     
-    // Find the job first to set context
-    const job = jobs.find(j => j.job_id === jobId);
+    // Find the job first to set context (use passed jobsData or state)
+    const jobsToSearch = jobsData || jobs;
+    const job = jobsToSearch.find(j => j.job_id === jobId);
     if (job) {
       setCurrentJobProfile(job.job_profile);
       setCurrentCompanyName(job.company_name);
