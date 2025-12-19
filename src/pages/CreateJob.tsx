@@ -19,7 +19,6 @@ export default function CreateJob() {
   const [locationType, setLocationType] = useState("");
   const [expectedSalary, setExpectedSalary] = useState("");
   const [rankingCriteria, setRankingCriteria] = useState("");
-  const [interviewQuestions, setInterviewQuestions] = useState("");
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [shareLink, setShareLink] = useState("");
@@ -67,7 +66,6 @@ export default function CreateJob() {
             location_type: locationType,
             expected_salary: expectedSalary,
             ranking_criteria: rankingCriteria,
-            interview_questions: interviewQuestions,
           }),
         }
       );
@@ -97,7 +95,6 @@ export default function CreateJob() {
       setLocationType("");
       setExpectedSalary("");
       setRankingCriteria("");
-      setInterviewQuestions("");
       setStep(1);
     } catch (error: any) {
       console.error("Error creating job:", error);
@@ -274,25 +271,6 @@ export default function CreateJob() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Describe how you want the AI to rank and evaluate resumes for this position
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="interview-questions" className="text-base font-semibold">
-                    Interview Questions <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
-                  </Label>
-                  <Textarea
-                    id="interview-questions"
-                    placeholder="E.g., 
-1. Tell me about a complex project you led and how you handled challenges.
-2. How do you approach debugging production issues?
-3. Describe your experience with agile methodologies..."
-                    value={interviewQuestions}
-                    onChange={(e) => setInterviewQuestions(e.target.value)}
-                    className="min-h-[140px] rounded-xl resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Add possible interview questions to ask candidates for this role (visible on dashboard)
                   </p>
                 </div>
 
