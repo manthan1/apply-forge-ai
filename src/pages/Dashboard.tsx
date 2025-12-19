@@ -117,6 +117,21 @@ export default function Dashboard() {
 
   const activeJobs = jobs.filter(job => job.status === "Active").length;
 
+  // Helper function to parse interview questions
+  const parseInterviewQuestions = (questions: string | null): string[] => {
+    if (!questions) return [];
+    try {
+      const parsed = JSON.parse(questions);
+      if (Array.isArray(parsed)) return parsed;
+      return [questions];
+    } catch {
+      // If not JSON, split by newlines or return as single item
+      if (questions.includes('\n')) {
+        return questions.split('\n').filter(q => q.trim());
+      }
+      return [questions];
+    }
+  };
   return (
     <DashboardLayout>
       {/* Header with Gradient */}
@@ -203,12 +218,22 @@ export default function Dashboard() {
                     {/* Interview Questions Section */}
                     {expandedJobId === job.id && job.interview_questions && (
                       <div className="px-4 pb-4 border-t border-border/50 mt-2 pt-3">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-3">
                           <MessageCircleQuestion className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium text-foreground">Interview Questions</span>
+                          <span className="text-sm font-semibold text-foreground">Suggested Interview Questions</span>
                         </div>
-                        <div className="text-sm text-muted-foreground whitespace-pre-line bg-background/50 rounded-lg p-3">
-                          {job.interview_questions}
+                        <div className="space-y-2">
+                          {parseInterviewQuestions(job.interview_questions).map((question, index) => (
+                            <div 
+                              key={index} 
+                              className="flex gap-3 p-3 bg-background/50 rounded-lg border border-border/30 hover:border-primary/30 smooth-transition"
+                            >
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+                                {index + 1}
+                              </span>
+                              <p className="text-sm text-foreground leading-relaxed">{question}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
