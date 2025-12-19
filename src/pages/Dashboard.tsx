@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Users, Briefcase, TrendingUp, Activity, Clock } from "lucide-react";
+import { Users, Briefcase, TrendingUp, Activity, Clock, MessageCircleQuestion, ChevronDown, ChevronUp } from "lucide-react";
 
 interface JobListing {
   id: string;
@@ -17,6 +17,7 @@ interface JobListing {
   company_name: string;
   status: string;
   created_at: string;
+  interview_questions: string | null;
 }
 
 interface ActivityLog {
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [shortlistedCount, setShortlistedCount] = useState(0);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [shortlistedCandidates, setShortlistedCandidates] = useState<ShortlistedCandidate[]>([]);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -173,21 +175,43 @@ export default function Dashboard() {
                 {jobs.filter(job => job.status === "Active").slice(0, 5).map((job) => (
                   <div
                     key={job.id}
-                    className="p-4 rounded-xl bg-secondary/30 hover:bg-secondary/50 smooth-transition border border-border/50"
+                    className="rounded-xl bg-secondary/30 hover:bg-secondary/50 smooth-transition border border-border/50 overflow-hidden"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">{job.job_profile}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{job.company_name}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-primary">{applicantCount[job.job_id] || 0}</p>
-                          <p className="text-xs text-muted-foreground">Applicants</p>
+                    <div 
+                      className="p-4 cursor-pointer"
+                      onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{job.job_profile}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{job.company_name}</p>
                         </div>
-                        <Badge className="bg-success/10 text-success hover:bg-success/20">Active</Badge>
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-primary">{applicantCount[job.job_id] || 0}</p>
+                            <p className="text-xs text-muted-foreground">Applicants</p>
+                          </div>
+                          <Badge className="bg-success/10 text-success hover:bg-success/20">Active</Badge>
+                          {job.interview_questions && (
+                            expandedJobId === job.id 
+                              ? <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                              : <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
                       </div>
                     </div>
+                    {/* Interview Questions Section */}
+                    {expandedJobId === job.id && job.interview_questions && (
+                      <div className="px-4 pb-4 border-t border-border/50 mt-2 pt-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageCircleQuestion className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">Interview Questions</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground whitespace-pre-line bg-background/50 rounded-lg p-3">
+                          {job.interview_questions}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
