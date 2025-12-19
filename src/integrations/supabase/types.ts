@@ -226,6 +226,7 @@ export type Database = {
           expected_salary: string | null
           hr_user_id: string
           id: string
+          interview_questions: string | null
           job_description: string
           job_id: string
           job_profile: string
@@ -241,6 +242,7 @@ export type Database = {
           expected_salary?: string | null
           hr_user_id: string
           id?: string
+          interview_questions?: string | null
           job_description: string
           job_id: string
           job_profile: string
@@ -256,6 +258,7 @@ export type Database = {
           expected_salary?: string | null
           hr_user_id?: string
           id?: string
+          interview_questions?: string | null
           job_description?: string
           job_id?: string
           job_profile?: string
